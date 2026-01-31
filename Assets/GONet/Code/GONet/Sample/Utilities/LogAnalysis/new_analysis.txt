@@ -1,0 +1,234 @@
+Analyzing: C:/Users/shash/AppData/LocalLow/Galore Interactive/GONetSandbox/logs/54208-gonet-2025-12-19.log
+====================================================================================================
+
+Total log lines analyzed: 5,179
+
+====================================================================================================
+BY LOG LEVEL:
+====================================================================================================
+  Warning           2,083 ( 40.2%)
+  Debug             1,942 ( 37.5%)
+  Info              1,152 ( 22.2%)
+  Error                 2 (  0.0%)
+
+====================================================================================================
+TOP 40 SPAMMIEST SOURCES (file:line|tag):
+====================================================================================================
+
+#1: 1,160 occurrences (22.4%)
+Source: unknown
+Example: [Log:Debug][Client:4] (Thread:1)  (19 Dec 2025 09:21:07.338) (frame:96353/0.1481812s)  (GONet.TimeSync.cs:207) [TimeSync] Gap-closing interval initialized: 200ms
+
+#2: 837 occurrences (16.2%)
+Source: unknown|SPAWN-PROPAGATE
+Example: [Log:Debug][Client:4] (Thread:1)  (19 Dec 2025 09:21:07.747) (frame:96398/38.0078074s)  (GONet.AutoSync.cs:1424) [SPAWN-PROPAGATE] CLIENT publishing spawn event: GONetId=952319, name='CannonBall(Clone
+
+#3: 414 occurrences (8.0%)
+Source: Projectile.cs:186|STUCK-PROJECTILE
+Example: [Log:Warning][Client:4] (Thread:1)  (19 Dec 2025 09:21:12.403) (frame:96994/42.6678621s)  (Projectile.cs:186) [STUCK-PROJECTILE] GONetId=946175, OwnerAuth=1023, MyAuth=4, IsMine=False, IsLocallyRespon
+
+#4: 337 occurrences (6.5%)
+Source: GONetHostFailover.cs:1401
+Example: [Log:Info][Server] (Thread:1)  (19 Dec 2025 09:21:23.107) (frame:98359/53.3681907s)  (GONetHostFailover.cs:1401) [Failover] Migrated GNP 'GONetGlobal' (GONetId: 2047): IsMine=True, OwnerAuthorityId=10
+
+#5: 336 occurrences (6.5%)
+Source: GONet.cs:1870
+Example: [Log:Debug][Server] (Thread:1)  (19 Dec 2025 09:21:23.107) (frame:98359/53.3681907s)  (GONet.cs:1870) [Failover] Reset blend buffers and at-rest bits for GNP 'Physics Cube Projectile(Clone)' (GONetId:
+
+#6: 335 occurrences (6.5%)
+Source: GONetHostFailover.cs:2239
+Example: [Log:Info][Server] (Thread:1)  (19 Dec 2025 09:21:23.111) (frame:98359/53.3681907s)  (GONetHostFailover.cs:2239) [Failover-SafetyNet] Destroying orphaned transient 'Physics Cube Projectile(Clone)' (GO
+
+#7: 257 occurrences (5.0%)
+Source: Projectile.cs:169|STUCK-PROJECTILE-FIRST
+Example: [Log:Warning][Client:4] (Thread:1)  (19 Dec 2025 09:21:07.419) (frame:96356/0.283339s)  (Projectile.cs:169) [STUCK-PROJECTILE-FIRST] GONetId=946175, OwnerAuth=1023, MyAuth=4, IsMine=False, IsLocallyRe
+
+#8: 253 occurrences (4.9%)
+Source: GONetConnections.cs:469|SPAWN-COMPRESS
+Example: [Log:Debug][Client:4] (Thread:15)  (19 Dec 2025 09:21:07.341) (frame:96354/0.2058843s)  (GONetConnections.cs:469) [SPAWN-COMPRESS] after compress+header: bytes=121, GONetId=2751725571, firstBytes=0674
+
+#9: 232 occurrences (4.5%)
+Source: unknown|INIT
+Example: [Log:Warning][Client:4] (Thread:1)  (19 Dec 2025 09:21:07.339) (frame:96353/0.1481812s)  (GONet.Network.cs:988) [INIT] Deferring AllValues bundle processing - client loading scene 'ProjectileTest'
+
+#10: 121 occurrences (2.3%)
+Source: unknown|DEFERRED-PROCESSING
+Example: [Log:Warning][Client:4] (Thread:1)  (19 Dec 2025 09:21:07.362) (frame:96355/0.2134707s)  (GONet.AutoSync.cs:1661) [DEFERRED-PROCESSING] ========================================
+
+#11: 116 occurrences (2.2%)
+Source: unknown|LATE-JOINER-TRACK
+Example: [Log:Warning][Client:4] (Thread:1)  (19 Dec 2025 09:21:07.339) (frame:96353/0.1481812s)  (GONet.Network.cs:1019) [LATE-JOINER-TRACK] Deferred bundle 1/? for scene 'ProjectileTest'
+
+#12: 88 occurrences (1.7%)
+Source: ProjectileSpawner.cs:190|SPAWN-DIAG
+Example: [Log:Info][Client:4] (Thread:1)  (19 Dec 2025 09:21:07.747) (frame:96398/38.0078074s)  (ProjectileSpawner.cs:190) [SPAWN-DIAG] Spawned 9 projectiles: 3 client-owned, 6 server-owned
+
+#13: 73 occurrences (1.4%)
+Source: GONetHostFailover.cs:1466
+Example: [Log:Info][Server] (Thread:1)  (19 Dec 2025 09:21:23.110) (frame:98359/53.3681907s)  (GONetHostFailover.cs:1466) [Failover] Destroying promoting client's transient object 'CannonBall(Clone)' (GONetId:
+
+#14: 62 occurrences (1.2%)
+Source: GONetParticipant_AutoMagicalSyncCompanion_Generated.cs:296
+Example: [Log:Warning][Server] (Thread:1)  (19 Dec 2025 09:21:36.435) (frame:99913/66.6866546s)  (GONetParticipant_AutoMagicalSyncCompanion_Generated.cs:296) Value was 'At Rest' but it was not broadcasted!  An
+
+#15: 23 occurrences (0.4%)
+Source: GONet.cs:5249|SYNC-DIAG-SOA
+Example: [Log:Info][Client:4] (Thread:1)  (19 Dec 2025 09:21:07.299) (frame:96353/0.1481812s)  (GONet.cs:5249) [SYNC-DIAG-SOA] SoA_WritePositionUpdate: total=1, for4095=0, isServer=False
+
+#16: 22 occurrences (0.4%)
+Source: GONet.cs:4283
+Example: [Log:Info][Client:0] (Thread:15)  (19 Dec 2025 09:21:07.142) (frame:96335/0.0076788s)  (GONet.cs:4283) SLEEP!  I am not connected right now.  I have data to send, but need to wait to be connected in o
+
+#17: 15 occurrences (0.3%)
+Source: SoA_ObjectHealthMonitor.cs:457|STUCK-OBJECT
+Example: [Log:Warning][Client:4] (Thread:1)  (19 Dec 2025 09:21:17.344) (frame:97623/47.6092298s)  (SoA_ObjectHealthMonitor.cs:457) [STUCK-OBJECT] CLI|gid=413698|raw=404|owner=CLI2|reason=NO_DATA_IN|age=10.0s|
+
+#18: 12 occurrences (0.2%)
+Source: GONet.cs:3802|SLC-TRACE-2
+Example: [Log:Info][Client:0] (Thread:1)  (19 Dec 2025 09:21:07.135) (frame:0/0.0015419s)  (GONet.cs:3802) [SLC-TRACE-2] STAGE2_ENQUEUE bytes=26 channel=6 hex=0604CF39000000000000535F4569EA36 thread=1 queueSiz
+
+#19: 12 occurrences (0.2%)
+Source: GONetGossip.cs:608
+Example: [Log:Debug][Client:4] (Thread:1)  (19 Dec 2025 09:21:08.229) (frame:96460/38.4921157s)  (GONetGossip.cs:608) [GONetGossip] Processed aggregate with 2 nodes
+
+#20: 9 occurrences (0.2%)
+Source: GONetSpawnSupport_Runtime.cs:227
+Example: [Log:Debug] (Thread:1)  (19 Dec 2025 09:21:07.126) (frame:0/51.2871012s)  (GONetSpawnSupport_Runtime.cs:227) CacheAllDesignTimeMetadata: Found RESOURCES template for 'GONet_GlobalContext' at location:
+
+#21: 9 occurrences (0.2%)
+Source: GONet.cs:4319|SLC-TRACE-3
+Example: [Log:Info][Client:0] (Thread:15)  (19 Dec 2025 09:21:07.176) (frame:96339/0.0387919s)  (GONet.cs:4319) [SLC-TRACE-3] STAGE3_DEQUEUE bytes=26 channel=6 hex=0604CF39000000000000535F4569EA36 thread=15 co
+
+#22: 8 occurrences (0.2%)
+Source: GONetClient.cs:449
+Example: [Log:Debug][Client:0] (Thread:1)  (19 Dec 2025 09:21:07.135) (frame:0/0.0014751s)  (GONetClient.cs:449) Client state changed to: SendingConnectionRequest.  My client UID: 9963993080996912979
+
+#23: 8 occurrences (0.2%)
+Source: GONetGossip.cs:344
+Example: [Log:Debug][Client:4] (Thread:1)  (19 Dec 2025 09:21:07.425) (frame:96357/37.6329731s)  (GONetGossip.cs:344) [GONetGossip] Sent metrics to host (authority 1023)
+
+#24: 8 occurrences (0.2%)
+Source: GONetHotStandby.cs:2705
+Example: [Log:Debug][Client:4] (Thread:1)  (19 Dec 2025 09:21:07.426) (frame:96357/37.6329731s)  (GONetHotStandby.cs:2705) [HotStandby] Dormant server: no clients in authority map to send keepalives to
+
+#25: 6 occurrences (0.1%)
+Source: NonAuthorityBlendingSoA_Final.cs:281
+Example: [Log:Info][Client:4] (Thread:1)  (19 Dec 2025 09:21:09.499) (frame:96622/39.7586076s)  (NonAuthorityBlendingSoA_Final.cs:281) [SoA-Resize] Shadow buffers resizing: positions 200 → 200, rotations 200 →
+
+#26: 6 occurrences (0.1%)
+Source: GONetHostFailover.cs:1977
+Example: [Log:Debug][Server] (Thread:1)  (19 Dec 2025 09:21:23.130) (frame:98359/53.3681907s)  (GONetHostFailover.cs:1977) [Failover] Sending emergency promotion: new host 1023, epoch 3
+
+#27: 5 occurrences (0.1%)
+Source: unknown|DDOL
+Example: [Log:Debug][Client:4] (Thread:1)  (19 Dec 2025 09:21:07.285) (frame:96353/0.1481812s)  (GONet.AutoSync.cs:769) [DDOL] Auto-applied DontDestroyOnLoad to: GONet_LocalContext(Clone)
+
+#28: 5 occurrences (0.1%)
+Source: GONetHostFailover.cs:1969
+Example: [Log:Warning][Client:4] (Thread:1)  (19 Dec 2025 09:21:07.420) (frame:96356/37.6280752s)  (GONetHostFailover.cs:1969) [Failover-TRACE] STATE TRANSITION: HostAlive -> Complete (myAuthority=4)
+
+#29: 5 occurrences (0.1%)
+Source: SoA_ObjectHealthMonitor.cs:368|STUCK-SUMMARY
+Example: [Log:Warning][Client:4] (Thread:1)  (19 Dec 2025 09:21:17.344) (frame:97623/47.6092298s)  (SoA_ObjectHealthMonitor.cs:368) [STUCK-SUMMARY] CLI|count=3|oldest_age=10.0s
+
+#30: 5 occurrences (0.1%)
+Source: GONetHostFailover.cs:2012
+Example: [Log:Debug][Server] (Thread:1)  (19 Dec 2025 09:21:23.333) (frame:98380/53.594487s)  (GONetHostFailover.cs:2012) [Failover] Sending emergency promotion retry (1/5)
+
+#31: 4 occurrences (0.1%)
+Source: GONetConnectionManager.cs:690
+Example: [Log:Debug] (Thread:1)  (19 Dec 2025 09:21:07.086) (frame:0/51.2472532s)  (GONetConnectionManager.cs:690) [GONetConnectionManager] Status: Initializing GONet...
+
+#32: 4 occurrences (0.1%)
+Source: GONetSessionContext.cs:32
+Example: [Log:Debug] (Thread:1)  (19 Dec 2025 09:21:07.131) (frame:0/51.2930292s)  (GONetSessionContext.cs:32) GONet logging entry point.  Please do not comment out this log statement.  This is a side effect o
+
+#33: 4 occurrences (0.1%)
+Source: GONetConnections.cs:265
+Example: [Log:Info] (Thread:1)  (19 Dec 2025 09:21:07.133) (frame:0/51.2943598s)  (GONetConnections.cs:265) [GONetConnection] Transport NetcodeIOTransport has built-in reliability: False
+
+#34: 4 occurrences (0.1%)
+Source: GONetConnections.cs:277
+Example: [Log:Info] (Thread:1)  (19 Dec 2025 09:21:07.133) (frame:0/51.294363s)  (GONetConnections.cs:277) [GONetConnection] Transport lacks reliability - will use ReliableNetcode wrapper
+
+#35: 4 occurrences (0.1%)
+Source: GONetConnections.cs:298
+Example: [Log:Info][Client:0] (Thread:1)  (19 Dec 2025 09:21:07.133) (frame:0/51.2943651s)  (GONetConnections.cs:298) [GONetConnection] HOST-FIX-CHECK: connection=null, GONetMain.IsServer=False, isStandbyMeshC
+
+#36: 4 occurrences (0.1%)
+Source: GONet.cs:956
+Example: [Log:Debug][Server] (Thread:1)  (19 Dec 2025 09:21:23.119) (frame:98359/53.3681907s)  (GONet.cs:956) [Failover] Synthesized InstantiateGONetParticipantEvent for GONetId=2047, Owner=1023, Location='res
+
+#37: 3 occurrences (0.1%)
+Source: GONet.cs:2246
+Example: [Log:Debug] (Thread:1)  (19 Dec 2025 09:21:07.086) (frame:0/51.2473438s)  (GONet.cs:2246) Server override set to: False, args: [127.0.0.1]:7782, ServerIPAddress_Actual: 127.0.0.1, ServerPort_Actual: 7
+
+#38: 3 occurrences (0.1%)
+Source: unknown|SYNC-MAINTHREAD
+Example: [Log:Debug][Client:4] (Thread:1)  (19 Dec 2025 09:21:07.299) (frame:96353/0.1481812s)  (GONet.AutoSync.cs:2418) [SYNC-MAINTHREAD] Sync scheduler configured for main thread: 0/Reliable
+
+#39: 3 occurrences (0.1%)
+Source: unknown|INIT-TIMELINE
+Example: [Log:Info][Client:4] (Thread:1)  (19 Dec 2025 09:21:07.300) (frame:96353/0.1481812s)  (GONet.Network.cs:1122) [INIT-TIMELINE] CLIENT T+0: RECEIVED ServerSaysClientInitializationCompletion at 0.148s
+
+#40: 3 occurrences (0.1%)
+Source: GONetGossip.cs:705
+Example: [Log:Info][Client:4] (Thread:1)  (19 Dec 2025 09:21:07.314) (frame:96353/0.1481812s)  (GONetGossip.cs:705) [GONetGossip] Local endpoint set: Endpoint(v4:192.168.1.84:7783, v6:[fe80::497c:27e0:b59a:fbe
+
+====================================================================================================
+TOP TAGS:
+====================================================================================================
+  [SPAWN-PROPAGATE                         ]        837 ( 16.2%)
+  [STUCK-PROJECTILE                        ]        414 (  8.0%)
+  [STUCK-PROJECTILE-FIRST                  ]        257 (  5.0%)
+  [SPAWN-COMPRESS                          ]        253 (  4.9%)
+  [INIT                                    ]        237 (  4.6%)
+  [DEFERRED-PROCESSING                     ]        121 (  2.3%)
+  [LATE-JOINER-TRACK                       ]        116 (  2.2%)
+  [SPAWN-DIAG                              ]         88 (  1.7%)
+  [SYNC-DIAG-SOA                           ]         23 (  0.4%)
+  [STUCK-OBJECT                            ]         15 (  0.3%)
+  [SLC-TRACE-2                             ]         12 (  0.2%)
+  [SLC-TRACE-3                             ]          9 (  0.2%)
+  [INIT-TIMELINE                           ]          7 (  0.1%)
+  [MESH-TOPO                               ]          6 (  0.1%)
+  [DDOL                                    ]          5 (  0.1%)
+  [STUCK-SUMMARY                           ]          5 (  0.1%)
+  [DEBUG                                   ]          3 (  0.1%)
+  [SYNC-MAINTHREAD                         ]          3 (  0.1%)
+  [EVENTBUS-PUBLISH                        ]          3 (  0.1%)
+  [QUEUE-BACKUP                            ]          2 (  0.0%)
+
+====================================================================================================
+DEBUG LOGS BY SOURCE (these are candidates for removal):
+====================================================================================================
+  unknown                                            1,197 Debug logs
+  GONet.cs:1870                                        336 Debug logs
+  GONetConnections.cs:469                              253 Debug logs
+  GONetGossip.cs:608                                    12 Debug logs
+  GONetSpawnSupport_Runtime.cs:227                       9 Debug logs
+  GONetClient.cs:449                                     8 Debug logs
+  GONetGossip.cs:344                                     8 Debug logs
+  GONetHotStandby.cs:2705                                8 Debug logs
+  GONetHostFailover.cs:1977                              6 Debug logs
+  GONetHostFailover.cs:2012                              5 Debug logs
+  GONetConnectionManager.cs:690                          4 Debug logs
+  GONetSessionContext.cs:32                              4 Debug logs
+  GONet.cs:956                                           4 Debug logs
+  GONet.cs:2246                                          3 Debug logs
+  GONetLocal.cs:200                                      3 Debug logs
+  GONetHotStandby.cs:1669                                3 Debug logs
+  GONetHotStandby.cs:2661                                3 Debug logs
+  GONetHotStandby.cs:2733                                3 Debug logs
+  GONetClient.cs:396                                     2 Debug logs
+  GONet.cs:542                                           2 Debug logs
+  Server.cs:1252                                         2 Debug logs
+  GONetEventBus.cs:943                                   2 Debug logs
+  GONetServer.cs:1012                                    2 Debug logs
+  GONetHotStandby.cs:1641                                2 Debug logs
+  GONetClient.cs:419                                     2 Debug logs
+  AllBlendableTypesTest_RPC_Generated.cs:157             1 Debug logs
+  CircularMotion_RPC_Generated.cs:157                    1 Debug logs
+  CircularMotion_ZeroSync_RPC_Generated.cs:157           1 Debug logs
+  ClaimableObjectViaRpcs_RPC_Generated.cs:270            1 Debug logs
+  GONetGlobal_RPC_Generated.cs:416                       1 Debug logs

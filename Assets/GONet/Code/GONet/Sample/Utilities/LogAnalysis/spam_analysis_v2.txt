@@ -1,0 +1,235 @@
+Analyzing: C:\Users\shash\AppData\LocalLow\Galore Interactive\GONetSandbox\logs\64232-gonet-2025-12-18.log
+====================================================================================================
+
+Total log lines analyzed: 886,389
+
+====================================================================================================
+BY LOG LEVEL:
+====================================================================================================
+  Warning         496,423 ( 56.0%)
+  Debug           387,572 ( 43.7%)
+  Info              2,238 (  0.3%)
+  Error               155 (  0.0%)
+  Fatal                 1 (  0.0%)
+
+====================================================================================================
+TOP 40 SPAMMIEST SOURCES (file:line|tag):
+====================================================================================================
+
+#1: 307,163 occurrences (34.7%)
+Source: SteamworksTransport.cs:1344
+Example: [Log:Warning][Server] (Thread:21)  (18 Dec 2025 21:26:48.558) (frame:51844/532.7311909s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 892 bytes, result=k_EResultLimitExcee
+
+#2: 121,168 occurrences (13.7%)
+Source: unknown|SYNC-PROCESS
+Example: [Log:Debug][Server] (Thread:1)  (18 Dec 2025 21:24:44.658) (frame:36224/408.807182s)  (GONet.AutoSync.cs:2551) [SYNC-PROCESS] grp=0/Reliable
+
+#3: 121,167 occurrences (13.7%)
+Source: unknown|SYNC-ENTRY
+Example: [Log:Debug][Server] (Thread:1)  (18 Dec 2025 21:24:44.658) (frame:36224/408.807182s)  (GONet.AutoSync.cs:2569) [SYNC-ENTRY] grp=0/Reliable, maps=2, total=4
+
+#4: 121,166 occurrences (13.7%)
+Source: unknown|SYNC-SUMMARY
+Example: [Log:Debug][Server] (Thread:1)  (18 Dec 2025 21:24:44.658) (frame:36224/408.807182s)  (GONet.AutoSync.cs:2682) [SYNC-SUMMARY] grp=0/Reliable, toSend=0, atRest=0
+
+#5: 84,794 occurrences (9.6%)
+Source: GONetGossip.cs:633
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:24:48.894) (frame:36767/413.0689942s)  (GONetGossip.cs:633) [GONetGossip] Node 1023 metrics are stale (no update for 6s)
+
+#6: 84,794 occurrences (9.6%)
+Source: GONetGossipIntegration.cs:1225
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:24:48.894) (frame:36767/413.0689942s)  (GONetGossipIntegration.cs:1225) [GONetGossipIntegration] Metrics stale for authority=1023
+
+#7: 8,349 occurrences (0.9%)
+Source: unknown|HOST-SYNC-OUT
+Example: [Log:Debug][Server] (Thread:1)  (18 Dec 2025 21:24:44.659) (frame:36225/408.8340142s)  (GONet.AutoSync.cs:2698) [HOST-SYNC-OUT] Server sending sync bundle with 9 total changes (9 server-owned) in grou
+
+#8: 5,644 occurrences (0.6%)
+Source: GONetConnections.cs:315|MESH-DIAG-FILTER
+Example: [Log:Warning][Client:0] (Thread:1)  (18 Dec 2025 21:24:01.602) (frame:30778/0.0268682s)  (GONetConnections.cs:315) [MESH-DIAG-FILTER] source=NULL, connection=NULL, wouldFilter=False, firstByte=62, len
+
+#9: 3,244 occurrences (0.4%)
+Source: SteamworksTransport.cs:900
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:24:44.658) (frame:36224/408.807182s)  (SteamworksTransport.cs:900) SteamworksTransport.Send: Not connected
+
+#10: 3,241 occurrences (0.4%)
+Source: SteamworksTransport.cs:890
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:24:44.658) (frame:36224/408.807182s)  (SteamworksTransport.cs:890) SteamworksTransport.Send: Invalid target connection (server-side)
+
+#11: 3,025 occurrences (0.3%)
+Source: GONetHotStandby.cs:2797
+Example: [Log:Debug][Server] (Thread:1)  (18 Dec 2025 21:25:23.751) (frame:41213/447.9252497s)  (GONetHotStandby.cs:2797) [HotStandby] Sent mesh heartbeat to 1 standby clients (epoch=3)
+
+#12: 2,714 occurrences (0.3%)
+Source: GONetGossipIntegration.cs:366
+Example: [Log:Debug][Server] (Thread:1)  (18 Dec 2025 21:24:44.760) (frame:36238/408.9352847s)  (GONetGossipIntegration.cs:366) [Heartbeat-SEND] Sent heartbeat to 1 clients, size=56, epoch=3, sessionGUID=-8434
+
+#13: 2,687 occurrences (0.3%)
+Source: unknown
+Example: [Log:Debug][Client:4] (Thread:1)  (18 Dec 2025 21:24:01.668) (frame:30779/0.0346462s)  (GONet.Network.cs:2306) [GONetIdBatch] CLIENT syncing lastAssignedGONetIdRaw: 0 → 805 (from server)
+
+#14: 1,353 occurrences (0.2%)
+Source: SteamworksTransport.cs:1546|MESH-DIAG-RX
+Example: [Log:Warning][Client:4] (Thread:1)  (18 Dec 2025 21:24:01.851) (frame:30793/366.0258802s)  (SteamworksTransport.cs:1546) [MESH-DIAG-RX] Server received standby msg: channel=11, type=33, size=58, sourc
+
+#15: 1,071 occurrences (0.1%)
+Source: GONetGossipIntegration.cs:599
+Example: [Log:Warning][Client:4] (Thread:1)  (18 Dec 2025 21:24:01.677) (frame:30781/0.1022558s)  (GONetGossipIntegration.cs:599) [GossipIntegration-RECV] Received DistributedHost message: type=3, channel=11, 
+
+#16: 959 occurrences (0.1%)
+Source: GONetHostFailover.cs:565
+Example: [Log:Debug][Client:4] (Thread:1)  (18 Dec 2025 21:24:01.671) (frame:30780/0.0953897s)  (GONetHostFailover.cs:565) [Failover-TRACE] Update called: isHost=False, state=HostAlive, timeSinceHB=0.00s
+
+#17: 899 occurrences (0.1%)
+Source: unknown|SPAWN
+Example: [Log:Debug][Client:0] (Thread:1)  (18 Dec 2025 21:24:01.577) (frame:0/0.0025255s)  (GONet.AutoSync.cs:1032) [SPAWN] GONetGlobal detected - suppressing spawn event propagation (locally instantiated on 
+
+#18: 896 occurrences (0.1%)
+Source: GONet.cs:6051|HOST-NOT-READY
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:25:27.730) (frame:41718/451.9047239s)  (GONet.cs:6051) [HOST-NOT-READY] 'CannonBall(Clone)' (GONetId=827391) not ready: Awake() not complete
+
+#19: 821 occurrences (0.1%)
+Source: unknown|GONETREADY-QUEUE
+Example: [Log:Debug][Server] (Thread:1)  (18 Dec 2025 21:25:28.707) (frame:41842/452.8819779s)  (GONet.Network.cs:807) [GONETREADY-QUEUE] Deferred Unreliable sync bundle - participant 1034245 missing/not ready
+
+#20: 820 occurrences (0.1%)
+Source: GONet.cs:1646|GONETREADY-QUEUE
+Example: [Log:Debug][Server] (Thread:1)  (18 Dec 2025 21:25:28.715) (frame:41843/452.8895045s)  (GONet.cs:1646) [GONETREADY-QUEUE] Processed 1 deferred bundles, 0 dropped (still not ready after retry), 1 remai
+
+#21: 813 occurrences (0.1%)
+Source: GONetGlobal.cs:1844
+Example: [Log:Debug][Client:4] (Thread:1)  (18 Dec 2025 21:24:01.693) (frame:30781/0.1022558s)  (GONetGlobal.cs:1844) [WasInstantiated] FALSE (Signal #2: DesignTimeLocation scene_hierarchy) - 'Test GO - All Bl
+
+#22: 813 occurrences (0.1%)
+Source: GONetGlobal.cs:1742
+Example: [Log:Info][Client:4] (Thread:1)  (18 Dec 2025 21:24:01.693) (frame:30781/0.1022558s)  (GONetGlobal.cs:1742)   - 'Test GO - All Blendable Types' (InstanceID: 5090, AwakeTime: 63901707841.687300s)
+
+#23: 813 occurrences (0.1%)
+Source: unknown|BUNDLE-MISSING-PARTICIPANT
+Example: [Log:Debug][Server] (Thread:1)  (18 Dec 2025 21:25:28.707) (frame:41842/452.8819779s)  (GONet.AutoSync.cs:4057) [BUNDLE-MISSING-PARTICIPANT] ⚠️ Sync bundle for unknown participant - Will DEFER (timeou
+
+#24: 812 occurrences (0.1%)
+Source: GONetGlobal.cs:2102|CACHE-SKIP
+Example: [Log:Debug][Server] (Thread:1)  (18 Dec 2025 21:25:26.837) (frame:41606/450.9959191s)  (GONetGlobal.cs:2102) [CACHE-SKIP] No init data to cache for 'scene://ProjectileTest/TestBeaconController' (no IG
+
+#25: 644 occurrences (0.1%)
+Source: GONetHotStandby.cs:2459
+Example: [Log:Warning][Client:4] (Thread:1)  (18 Dec 2025 21:24:02.264) (frame:30846/366.4390247s)  (GONetHotStandby.cs:2459) [HotStandby-UPDATE] Standby conn state during failover: peer=1023, standbyState=Not
+
+#26: 628 occurrences (0.1%)
+Source: GONet.cs:2233|RELIABLE-STALE
+Example: [Log:Debug][Client:4] (Thread:1)  (18 Dec 2025 21:24:03.360) (frame:30986/367.53481s)  (GONet.cs:2233) [RELIABLE-STALE] conn=Dormant-S->C1023 Stale connection detected! Forced 1 retransmits, timeSince
+
+#27: 580 occurrences (0.1%)
+Source: GONet.cs:2233|RELIABLE-SEND-GAP
+Example: [Log:Debug][Server] (Thread:1)  (18 Dec 2025 21:26:46.692) (frame:51612/530.8620267s)  (GONet.cs:2233) [RELIABLE-SEND-GAP] Forcing retransmit of stuck msgSeq=926: oldestUnacked=926, highestAcked=1003,
+
+#28: 486 occurrences (0.1%)
+Source: GONetGossipIntegration.cs:225
+Example: [Log:Debug][Client:4] (Thread:1)  (18 Dec 2025 21:24:01.671) (frame:30780/0.0953897s)  (GONetGossipIntegration.cs:225) [GossipIntegration-TRACE] Update running (elapsed=0.1s)
+
+#29: 375 occurrences (0.0%)
+Source: GONetHotStandby.cs:3286|MESH-STATE
+Example: [Log:Warning][Client:4] (Thread:1)  (18 Dec 2025 21:24:01.788) (frame:30785/365.9317652s)  (GONetHotStandby.cs:3286) [MESH-STATE] PERIODIC isFailover=True: myAuth=4 outbound=[] inbound=[] isServer=Fal
+
+#30: 356 occurrences (0.0%)
+Source: SteamworksTransport.cs:1497|SYNC-DIAG-RX
+Example: [Log:Info][Client:0] (Thread:1)  (18 Dec 2025 21:24:01.594) (frame:30777/0.0191346s)  (SteamworksTransport.cs:1497) [SYNC-DIAG-RX] SteamworksTransport received: msgs=1, totalBytes=644, thisMsg: size=6
+
+#31: 339 occurrences (0.0%)
+Source: GONetServer.cs:496|SYNC-DIAG-TX
+Example: [Log:Info][Server] (Thread:6)  (18 Dec 2025 21:24:44.642) (frame:36224/408.807182s)  (GONetServer.cs:496) [SYNC-DIAG-TX] SendBytesToAllClients stats: calls=1, totalBytes=0, totalClientSends=0, numConn
+
+#32: 324 occurrences (0.0%)
+Source: GONetGossipIntegration.cs:609
+Example: [Log:Debug][Client:4] (Thread:1)  (18 Dec 2025 21:24:01.677) (frame:30781/0.1022558s)  (GONetGossipIntegration.cs:609) [Heartbeat-RECV] Received heartbeat on channel 11, size=56, from authority 1023, 
+
+#33: 324 occurrences (0.0%)
+Source: GONetGossipIntegration.cs:772
+Example: [Log:Debug][Client:4] (Thread:1)  (18 Dec 2025 21:24:01.677) (frame:30781/0.1022558s)  (GONetGossipIntegration.cs:772) [Heartbeat-VALID] Heartbeat validation: isValid=True, recv.SessionGUID=-843443567
+
+#34: 323 occurrences (0.0%)
+Source: GONetHostFailover.cs:933
+Example: [Log:Debug][Client:4] (Thread:1)  (18 Dec 2025 21:24:01.787) (frame:30785/365.9317652s)  (GONetHostFailover.cs:933) [Heartbeat-PROC] Heartbeat processed: time=0.212, sinceLast=0.110s, host=1023, isFir
+
+#35: 241 occurrences (0.0%)
+Source: GONetGossipIntegration.cs:1219
+Example: [Log:Debug][Client:4] (Thread:1)  (18 Dec 2025 21:24:01.826) (frame:30790/366.0015547s)  (GONetGossipIntegration.cs:1219) [GONetGossipIntegration] Metrics received from authority=1023: RTT=451ms, CPU=
+
+#36: 228 occurrences (0.0%)
+Source: SteamworksTransport.cs:234
+Example: [Log:Warning][Server] (Thread:21)  (18 Dec 2025 21:26:48.558) (frame:51844/532.7311909s)  (SteamworksTransport.cs:234) [Steam]
+
+#37: 210 occurrences (0.0%)
+Source: GONetGossip.cs:318
+Example: [Log:Debug][Client:4] (Thread:1)  (18 Dec 2025 21:24:01.787) (frame:30785/365.9317652s)  (GONetGossip.cs:318) [GONetGossip] Broadcast metrics (Star): RTT=102ms, CPU=0%, Uptime=0min
+
+#38: 183 occurrences (0.0%)
+Source: GONetGossip.cs:336
+Example: [Log:Debug][Server] (Thread:1)  (18 Dec 2025 21:24:45.823) (frame:36374/409.9980948s)  (GONetGossip.cs:336) [GONetGossip] Host broadcasting aggregate with 3 nodes
+
+#39: 149 occurrences (0.0%)
+Source: GONetConnections.cs:516|RELIABLE-QUEUE-EXHAUSTION
+Example: [Log:Error][Server] (Thread:1)  (18 Dec 2025 21:30:22.412) (frame:77150/746.5826819s)  (GONetConnections.cs:516) [RELIABLE-QUEUE-EXHAUSTION] Reliable message queue exhausted and message DROPPED. Queue
+
+#40: 109 occurrences (0.0%)
+Source: SoA_ObjectHealthMonitor.cs:457|STUCK-OBJECT
+Example: [Log:Warning][Client:4] (Thread:1)  (18 Dec 2025 21:24:11.677) (frame:32042/375.8518967s)  (SoA_ObjectHealthMonitor.cs:457) [STUCK-OBJECT] CLI|gid=413698|raw=404|owner=CLI2|reason=NO_DATA_IN|age=10.0s
+
+====================================================================================================
+TOP TAGS:
+====================================================================================================
+  [SYNC-PROCESS                            ]    121,168 ( 13.7%)
+  [SYNC-ENTRY                              ]    121,167 ( 13.7%)
+  [SYNC-SUMMARY                            ]    121,166 ( 13.7%)
+  [HOST-SYNC-OUT                           ]      8,349 (  0.9%)
+  [MESH-DIAG-FILTER                        ]      5,644 (  0.6%)
+  [GONETREADY-QUEUE                        ]      1,641 (  0.2%)
+  [MESH-DIAG-RX                            ]      1,353 (  0.2%)
+  [SPAWN                                   ]        899 (  0.1%)
+  [HOST-NOT-READY                          ]        896 (  0.1%)
+  [BUNDLE-MISSING-PARTICIPANT              ]        813 (  0.1%)
+  [CACHE-SKIP                              ]        812 (  0.1%)
+  [RELIABLE-STALE                          ]        628 (  0.1%)
+  [RELIABLE-SEND-GAP                       ]        580 (  0.1%)
+  [MESH-STATE                              ]        375 (  0.0%)
+  [SYNC-DIAG-RX                            ]        356 (  0.0%)
+  [SYNC-DIAG-TX                            ]        339 (  0.0%)
+  [RELIABLE-QUEUE-EXHAUSTION               ]        149 (  0.0%)
+  [STUCK-OBJECT                            ]        109 (  0.0%)
+  [SPAWN-COMPRESS                          ]         95 (  0.0%)
+  [GNP-FAILOVER                            ]         87 (  0.0%)
+
+====================================================================================================
+DEBUG LOGS BY SOURCE (these are candidates for removal):
+====================================================================================================
+  unknown                                          374,480 Debug logs
+  GONetHotStandby.cs:2797                            3,025 Debug logs
+  GONetGossipIntegration.cs:366                      2,714 Debug logs
+  GONet.cs:2233                                      1,209 Debug logs
+  GONetHostFailover.cs:565                             959 Debug logs
+  GONet.cs:1646                                        820 Debug logs
+  GONetGlobal.cs:1844                                  813 Debug logs
+  GONetGlobal.cs:2102                                  812 Debug logs
+  GONetGossipIntegration.cs:225                        486 Debug logs
+  GONetGossipIntegration.cs:609                        324 Debug logs
+  GONetGossipIntegration.cs:772                        324 Debug logs
+  GONetHostFailover.cs:933                             323 Debug logs
+  GONetGossipIntegration.cs:1219                       241 Debug logs
+  GONetGossip.cs:318                                   210 Debug logs
+  GONetGossip.cs:336                                   183 Debug logs
+  GONetConnections.cs:469                               95 Debug logs
+  GONetHotStandby.cs:2661                               71 Debug logs
+  GONetHotStandby.cs:2733                               71 Debug logs
+  GONetHotStandby.cs:1669                               70 Debug logs
+  GONetHotStandby.cs:1641                               70 Debug logs
+  GONetGossip.cs:344                                    27 Debug logs
+  GONetGossip.cs:608                                    26 Debug logs
+  GONetEventBus.cs:943                                  14 Debug logs
+  GONetGlobal.cs:1825                                   10 Debug logs
+  GONetGlobal.cs:1837                                   10 Debug logs
+  GONetSpawnSupport_Runtime.cs:227                       9 Debug logs
+  GONetClient.cs:449                                     9 Debug logs
+  GONetHotStandby.cs:2705                                9 Debug logs
+  GONetEventBus.cs:921                                   7 Debug logs
+  GONetHostFailover.cs:1977                              6 Debug logs

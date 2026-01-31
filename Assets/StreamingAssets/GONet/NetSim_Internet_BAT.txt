@@ -1,0 +1,9 @@
+@echo off
+REM GONet Network Simulation - Internet Preset
+REM Simulates: 50ms latency, 15ms jitter, 1% packet loss
+REM Auto-detect determines if this instance is server or client
+REM Rename to .bat and change GONetSandbox.exe to your game name
+REM
+REM IMPORTANT: Network simulation only works in DEVELOPMENT BUILDS or the Unity Editor!
+REM            These arguments are ignored in Release builds (compiled out for zero overhead).
+START GONetSandbox.exe -netsim-preset internet

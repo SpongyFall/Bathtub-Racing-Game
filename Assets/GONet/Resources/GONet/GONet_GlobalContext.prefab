@@ -1,0 +1,199 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &8643402947905904701
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8643402947905904700}
+  - component: {fileID: 8643402947905904699}
+  - component: {fileID: 8643402947905904696}
+  - component: {fileID: 8643402947905904697}
+  - component: {fileID: 8643402947905904698}
+  m_Layer: 0
+  m_Name: GONet_GlobalContext
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8643402947905904700
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8643402947905904701}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 30.144913, y: 2.3399231, z: -68.09898}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8643402947905904699
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8643402947905904701}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f5102918c78ec2042a1f15388950a7d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isTickReceiver: 0
+  GONetServerPREFAB: {fileID: 114919729767367322, guid: 21cf7d9988e07984caf609c7700b8538,
+    type: 3}
+  GONetClientPREFAB: {fileID: 114597615443404838, guid: 4d70fba7ada04564ca38354a46d4d5f2,
+    type: 3}
+  authorityPrefab: {fileID: 0}
+  spawnPoints: []
+--- !u!114 &8643402947905904696
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8643402947905904701}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a90b92e03441514aba6c47a0110582a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  UnityGuid: 56c1b12035c5c034f81a7b4c212a379e
+  animatorSyncSupport:
+    keys: []
+    values: []
+  RemotelyControlledByAuthorityId: 0
+  SpawnerPersistentId: 0
+  destroyWhenSpawnerLeaves: 0
+  IsRigidBodyOwnerOnlyControlled: 0
+  ShouldHideDuringRemoteInstantiate: 0
+  AutoDontDestroyOnLoad: 1
+  client_overrideLimboMode: 0
+  client_limboMode: 2
+  IsPositionSyncd: 0
+  IsRotationSyncd: 0
+  wasInstantiatedForce: 0
+  myRigidBody: {fileID: 0}
+  myRigidBody2D: {fileID: 0}
+--- !u!114 &8643402947905904697
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8643402947905904701}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4036bcecddd421947a85c833702a01b2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &8643402947905904698
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8643402947905904701}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 627d57d90dfe8444abe3b2b34dd4e617, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isTickReceiver: 0
+  valueBlendingBufferLeadTimeMilliseconds: 100
+  enableAdaptiveBlendingBuffer: 1
+  adaptiveBufferMinLeadTimeMs: 100
+  adaptiveBufferMaxLeadTimeMs: 750
+  adaptiveBufferExpandSpeed: 0.4
+  adaptiveBufferShrinkSpeed: 0.1
+  gonetLocalPrefab: {fileID: 5118336138822136954, guid: 338c05f05b3eb634894468e022a5a11f,
+    type: 3}
+  enableAutoRoleDetection: 1
+  client_GONetIdBatchSize: 200
+  maxConnections: 16
+  enableAdaptivePoolScaling: 1
+  adaptivePoolBaselineSize: 1000
+  maxPacketsPerTick: 20000
+  unreliableDropThreshold: 0.9
+  enableCongestionLogging: 0
+  enableTemporalThinning: 1
+  sendQueueThinningTriggerCount: 200
+  receiveQueueThinningTriggerCount: 200
+  enableAdaptiveThinning: 1
+  temporalThinningKeepEveryNth: 2
+  queueProcessingCpuBudgetMs: 2.5
+  frameSpreadingSettings:
+    enableReliableFrameSpreading: 1
+    reliableProcessingThreshold: 200
+    reliableProcessingBaselineLimit: 100
+    enableAdaptiveFrameSpreading: 1
+    enableFrameSpreadingLogging: 0
+  enableLateJoinerBackpressure: 1
+  enableBackpressureUnreliableTrickle: 1
+  backpressureUnreliableTrickleIntervalMs: 200
+  enableAdaptiveTrickle: 1
+  minTrickleIntervalMs: 50
+  maxTrickleIntervalMs: 500
+  trickleAdaptationAlpha: 0.3
+  trickleUnreliableBatchSize: 0
+  reliableQueueHighWatermark: 500
+  reliableQueueLowWatermark: 150
+  congestionHysteresisCount: 3
+  maxSuppressionTimeoutSeconds: 30
+  timeoutRecoveryThresholdMultiplier: 1.2
+  enableCongestionStateLogging: 0
+  forceEnableSyncBundleDeferral: 1
+  deferSyncBundlesWaitingForGONetReady: 0
+  maxSyncBundlesWaitingForGONetReady: 100
+  maxBundlesProcessedPerGONetReadyCallback: 10
+  maxSecondsToWaitForMissingParticipant: 5
+  client_MaxSaneTimeSyncAdjustmentSeconds: 10
+  server_TimeSyncResponseRedundancy: 3
+  client_TimeSyncGapClosingIntervalMs: 200
+  usePluggableTransport: 0
+  transportType: 0
+  enableDistributedHostAuthority: 0
+  isPinnedHost: 0
+  hostMigrationCooldownSeconds: 15
+  hostMigrationScoreThreshold: 0.2
+  hostTimeoutSeconds: 2
+  enableViceHost: 1
+  newJoinerHostEligibilityDelaySeconds: 45
+  maxPlayersForDistributedMode: 32
+  betterHostMinimumDifference: 50
+  betterHostSustainSamples: 5
+  betterHostEventCooldownSeconds: 30
+  viceHostSyncStaleSeconds: 2
+  betterHostAutoMigrateEnabled: 0
+  networkSimulation_Enabled: 0
+  networkSimulation_LatencyMs: 0
+  networkSimulation_JitterMs: 0
+  networkSimulation_PacketLossPercent: 0
+  networkSimulation_DuplicatePercent: 0
+  velocityAnchorIntervalSeconds: 1
+  useUnifiedSoABlending: 1
+  gonetIdReuseDelaySeconds: 5
+  maxReliableMessageQueueSize: 2000
+  persistenceQueueMaxSize: 10000
+  persistenceQueueThinningTriggerPercent: 0.8
+  persistenceQueueThinningKeepEveryNth: 2
+  persistenceQueueRespectReliability: 1
+  persistenceQueueMaxCpuTimeMs: 0
+  maxNetworkProcessingBudgetMs: 5
+  networkQueueDropThreshold: 100
+  unreliableDropRate: 2
+  persistenceQueueMaxMemoryMB: 0
+  shouldAttemptAutoStartAsClient: 1
+  enableStatusUI: 1
+  enableMessageFlowLogging: 0
+  problematicGNPHandling: 0
+  server: 
+  serverPort: 0

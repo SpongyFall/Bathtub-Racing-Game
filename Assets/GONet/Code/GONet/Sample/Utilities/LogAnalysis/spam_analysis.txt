@@ -1,0 +1,255 @@
+Analyzing: C:\Users\shash\AppData\LocalLow\Galore Interactive\GONetSandbox\logs\64232-gonet-2025-12-18.log
+================================================================================
+
+Top 50 most frequent log patterns:
+
+
+================================================================================
+#1: 813 occurrences
+Pattern: GONetId: N, InstantiationId: N, ChannelId: N, QoS: Unreliable, IsClient: True, MyAuthorityId: N...
+Example: GONetId: 0, InstantiationId: 1034245, ChannelId: 2, QoS: Unreliable, IsClient: True, MyAuthorityId: 1023
+
+================================================================================
+#2: 813 occurrences
+Pattern: InGONetIdMap: False, InInstantiationMap: False...
+Example: InGONetIdMap: False, InInstantiationMap: False
+
+================================================================================
+#3: 813 occurrences
+Pattern: TotalInGONetIdMap: N, TotalInInstantiationMap: N...
+Example: TotalInGONetIdMap: 36, TotalInInstantiationMap: 36
+
+================================================================================
+#4: 813 occurrences
+Pattern: LIKELY CAUSE: Spawn message delayed/incomplete - sync arrived before participant ready...
+Example: LIKELY CAUSE: Spawn message delayed/incomplete - sync arrived before participant ready
+
+================================================================================
+#5: 810 occurrences
+Pattern: [Log:Debug][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/529.1462787s)  (GONet.AutoSync.cs: N) [BUNDLE-MISSING-PARTICIPANT] ⚠️ Sync bundle fo...
+Example: [Log:Debug][Server] (Thread:1)  (18 Dec 2025 21:26:44.972) (frame:51489/529.1462787s)  (GONet.AutoSync.cs:4057) [BUNDLE-MISSING-PARTICIPANT] ⚠️ Sync bundle for unknown participant - Will DEFER (timeou
+
+================================================================================
+#6: 810 occurrences
+Pattern: [Log:Debug][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/529.1462787s)  (GONet.Network.cs: N) [GONETREADY-QUEUE] Re-deferred Unreliable sync ...
+Example: [Log:Debug][Server] (Thread:1)  (18 Dec 2025 21:26:44.972) (frame:51489/529.1462787s)  (GONet.Network.cs:788) [GONETREADY-QUEUE] Re-deferred Unreliable sync bundle - participant 1040389 still missing/
+
+================================================================================
+#7: 810 occurrences
+Pattern: [Log:Debug][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/529.1462787s)  (GONet.cs: N) [GONETREADY-QUEUE] Processed 1 deferred bundles, 0 drop...
+Example: [Log:Debug][Server] (Thread:1)  (18 Dec 2025 21:26:44.972) (frame:51489/529.1462787s)  (GONet.cs:1646) [GONETREADY-QUEUE] Processed 1 deferred bundles, 0 dropped (still not ready after retry), 1 remai
+
+================================================================================
+#8: 165 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/567.3601772s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:23.191) (frame:56038/567.3601772s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 739 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#9: 165 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/585.5818432s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:41.419) (frame:58181/585.5818432s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 739 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#10: 164 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/555.221813s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam rejecte...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:11.053) (frame:54542/555.221813s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 758 bytes, result=k_EResultLimitExceede
+
+================================================================================
+#11: 164 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/574.7944886s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:30.625) (frame:56954/574.7944886s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 758 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#12: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/535.3215144s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:26:51.149) (frame:52166/535.3215144s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#13: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/535.5222363s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:26:51.353) (frame:52191/535.5222363s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#14: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/538.8424423s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:26:54.673) (frame:52605/538.8424423s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 758 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#15: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/543.8815174s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:26:59.713) (frame:53219/543.8815174s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#16: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/546.4863374s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:02.318) (frame:53536/546.4863374s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#17: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/546.6952231s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:02.526) (frame:53562/546.6952231s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#18: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/546.904434s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam rejecte...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:02.735) (frame:53588/546.904434s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceede
+
+================================================================================
+#19: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/548.2508448s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:04.082) (frame:53728/548.2508448s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 751 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#20: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/550.1853099s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:06.017) (frame:53931/550.1853099s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#21: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/552.4896897s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:08.322) (frame:54210/552.4896897s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#22: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/554.7996248s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:10.631) (frame:54490/554.7996248s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#23: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/555.4313051s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:11.263) (frame:54568/555.4313051s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#24: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/556.0618756s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:11.893) (frame:54645/556.0618756s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#25: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/556.4824124s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:12.314) (frame:54696/556.4824124s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#26: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/556.6916252s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:12.523) (frame:54722/556.6916252s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#27: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/557.3251973s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:13.156) (frame:54799/557.3251973s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#28: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/557.7474944s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:13.578) (frame:54851/557.7474944s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#29: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/559.4234496s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:15.255) (frame:55055/559.4234496s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#30: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/560.0555614s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:15.886) (frame:55132/560.0555614s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#31: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/561.5216577s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:17.353) (frame:55311/561.5216577s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#32: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/561.7316267s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:17.562) (frame:55337/561.7316267s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#33: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/561.9402066s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:17.771) (frame:55363/561.9402066s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#34: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/565.3845304s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:21.218) (frame:55791/565.3845304s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#35: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/565.5961089s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:21.427) (frame:55817/565.5961089s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#36: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/565.8045448s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:21.635) (frame:55843/565.8045448s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 751 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#37: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/566.644409s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam rejecte...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:22.475) (frame:55948/566.644409s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 758 bytes, result=k_EResultLimitExceede
+
+================================================================================
+#38: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/569.7574475s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:25.588) (frame:56334/569.7574475s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#39: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/570.1745198s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:26.005) (frame:56386/570.1745198s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#40: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/572.0656247s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:27.896) (frame:56620/572.0656247s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#41: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/572.6952388s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:28.527) (frame:56694/572.6952388s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 751 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#42: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/573.9554245s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:29.786) (frame:56850/573.9554245s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#43: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/574.1667418s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:29.997) (frame:56876/574.1667418s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#44: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/575.0031505s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:30.834) (frame:56980/575.0031505s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#45: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/575.6402957s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:31.467) (frame:57059/575.6402957s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#46: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/576.0532734s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:31.884) (frame:57111/576.0532734s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 751 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#47: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/576.2617735s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:32.093) (frame:57137/576.2617735s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#48: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/581.6821748s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:37.515) (frame:57773/581.6821748s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 751 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#49: 163 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/585.0440163s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam reject...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:27:40.875) (frame:58133/585.0440163s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceed
+
+================================================================================
+#50: 162 occurrences
+Pattern: [Log:Warning][Server] (Thread: N)  (18 Dec 2025 21: N: N) (frame: N/534.17855s)  (SteamworksTransport.cs: N) [SteamworksTransport] TX ✗ Steam rejected...
+Example: [Log:Warning][Server] (Thread:1)  (18 Dec 2025 21:26:50.010) (frame:52024/534.17855s)  (SteamworksTransport.cs:1344) [SteamworksTransport] TX ✗ Steam rejected: 756 bytes, result=k_EResultLimitExceeded

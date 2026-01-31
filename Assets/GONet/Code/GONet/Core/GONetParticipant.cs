@@ -1,0 +1,2579 @@
+﻿/* GONet (TM, serial number 88592370), Copyright (c) 2019-2023 Galore Interactive LLC - All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential, email: contactus@galoreinteractive.com
+ * 
+ *
+ * Authorized use is explicitly limited to the following:	
+ * -The ability to view and reference source code without changing it
+ * -The ability to enhance debugging with source code access
+ * -The ability to distribute products based on original sources for non-commercial purposes, whereas this license must be included if source code provided in said products
+ * -The ability to commercialize products built on original source code, whereas this license must be included if source code provided in said products and whereas the products are interactive multi-player video games and cannot be viewed as a product competitive to GONet
+ * -The ability to modify source code for local use only
+ * -The ability to distribute products based on modified sources for non-commercial purposes, whereas this license must be included if source code provided in said products
+ * -The ability to commercialize products built on modified source code, whereas this license must be included if source code provided in said products and whereas the products are interactive multi-player video games and cannot be viewed as a product competitive to GONet
+ */
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using GONet.Generation;
+using GONet.Serializables;
+using GONet.Utils;
+using UnityEngine;
+
+#if UNITY_EDITOR
+using UnityEditor.SceneManagement;
+using UnityEditor;
+#endif
+using GONetCodeGenerationId = System.Byte;
+
+namespace GONet
+{
+    /// <summary>
+    /// This is required to be present on any <see cref="GameObject"/> you want to have participate in GONet activities.
+    ///
+    /// <para><b>IMPORTANT - Lifecycle Requirements:</b></para>
+    /// <para>
+    /// GONetParticipants must remain in an ACTIVE hierarchy throughout their networked lifetime.
+    /// Disabling a parent GameObject (which cascades OnDisable to children) is NOT a supported pattern
+    /// and will cause synchronization issues for remote players.
+    /// </para>
+    ///
+    /// <para><b>Correct Pattern - Disable Components, Not GameObjects:</b></para>
+    /// <code>
+    /// // ❌ WRONG: Disabling GameObject cascades to GONetParticipant children
+    /// cameraGameObject.SetActive(false);
+    ///
+    /// // ✅ CORRECT: Disable specific components while keeping hierarchy active
+    /// camera.enabled = false;
+    /// audioListener.enabled = false;
+    /// meshRenderer.enabled = false;
+    /// </code>
+    ///
+    /// <para>
+    /// This is especially important for inventory systems where items are reparented to player
+    /// attachment points. If those attachment points are under a disabled GameObject (e.g., a
+    /// camera that's turned off for non-authority players), the items will lose synchronization.
+    /// </para>
+    /// </summary>
+    [DisallowMultipleComponent, ExecuteInEditMode, DefaultExecutionOrder(-199)]
+    public sealed class GONetParticipant : MonoBehaviour
+    {
+        #region constants
+
+        /// <summary>
+        /// This represents the index inside <see cref="GONet.Generation.GONetParticipant_ComponentsWithAutoSyncMembers.ComponentMemberNames_By_ComponentTypeFullName"/>
+        /// </summary>
+        internal const byte ASSumed_GONetId_INDEX = 0;
+
+        public const uint GONetIdRaw_Unset = 0;
+        public const uint GONetId_Unset = 0;
+
+        /// <summary>
+        /// Reserved raw GONetId for GONetGlobal (always 1).
+        /// Composed with server authority (1023) → Full GONetId = 2047 ((1 << 10) | 1023).
+        /// This ensures all server and client instances use the same hardcoded GONetId for GONetGlobal,
+        /// preventing GONetId mismatch issues when GONetGlobal is instantiated at runtime.
+        /// </summary>
+        public const uint GONetGlobal_GONetId_Raw = 1;
+
+        public const uint GONetId_Raw_MaxValue = (uint.MaxValue << GONET_ID_BIT_COUNT_UNUSED) >> GONET_ID_BIT_COUNT_UNUSED;
+
+        /// <summary>
+        /// TODO: make the main dll internals visible to editor dll so this can be made internal again
+        /// </summary>
+        public const GONetCodeGenerationId CodeGenerationId_Unset = 0;
+
+        #endregion
+
+        [SerializeField]
+        internal string UnityGuid;
+
+        private GONetCodeGenerationId? cachedCodeGenerationId;
+
+        public GONetCodeGenerationId CodeGenerationId
+        {
+            get
+            {
+                if (!cachedCodeGenerationId.HasValue)
+                {
+                    cachedCodeGenerationId = GONetSpawnSupport_Runtime.GetDesignTimeMetadata(this).CodeGenerationId;
+                }
+                return cachedCodeGenerationId.Value;
+            }
+            internal set
+            {
+                GONetSpawnSupport_Runtime.GetDesignTimeMetadata(this).CodeGenerationId = value;
+                cachedCodeGenerationId = value; // Update cache when value is set
+            }
+        }
+
+        [Serializable]
+        public class AnimatorControllerParameter
+        {
+            [SerializeField, HideInInspector]
+            public AnimatorControllerParameterType valueType;
+
+            [SerializeField]
+            public bool isSyncd;
+
+            /// <summary>
+            /// Indicates whether this parameter is controlled by an animation curve.
+            /// Curve-controlled parameters (e.g., IK parameters) should NOT be synced because:
+            /// 1. Unity produces warnings when trying to set curve-controlled parameters
+            /// 2. These values are computed locally by each client's animation/IK system
+            /// 3. Syncing them causes conflicts and visual jitter
+            /// </summary>
+            [SerializeField, HideInInspector]
+            public bool isCurveControlled;
+        }
+
+        /// <summary>
+        /// the key is the parameter name, the value is the other available info for that parameter
+        /// </summary>
+        [Serializable]
+        public class AnimatorControllerParameterMap : SerializableDictionary<string, AnimatorControllerParameter> { }
+
+        /// <summary>
+        /// IMPORTANT: Do NOT touch this.  It is GONet internal.
+        /// </summary>
+        [SerializeField, HideInInspector]
+        public AnimatorControllerParameterMap animatorSyncSupport;
+
+        public const int OWNER_AUTHORITY_ID_BIT_COUNT_USED = 10;
+        public const int OWNER_AUTHORITY_ID_BIT_COUNT_UNUSED = 16 - OWNER_AUTHORITY_ID_BIT_COUNT_USED;
+
+        public const int GONET_ID_BIT_COUNT_UNUSED = OWNER_AUTHORITY_ID_BIT_COUNT_USED;
+        public const int GONET_ID_BIT_COUNT_USED = 32 - GONET_ID_BIT_COUNT_UNUSED;
+
+        ushort ownerAuthorityId = GONetMain.OwnerAuthorityId_Unset;
+        /// <summary>
+        /// <para>This is set to a value that represents which machine in the game spawned this instance.</para>
+        /// <para>IMPORTANT: Up until some time during <see cref="Start"/>, this value will be <see cref="GONetMain.OwnerAuthorityId_Unset"/> and the owner is essentially unknown.  Once the owner is known, this value will change and the <see cref="SyncEvent_GONetParticipant_OwnerAuthorityId"/> event will fire (i.e., you should call <see cref="GONetEventBus.Subscribe{T}(GONetEventBus.HandleEventDelegate{T}, GONetEventBus.EventFilterDelegate{T})"/> on <see cref="GONetMain.EventBus"/>).</para>
+        /// <para>
+        /// If the corresponding <see cref="GameObject"/> is included in the/a Unity scene, the owner will be considered the server
+        /// and a value of <see cref="OwnerAuthorityId_Server"/> will be used.
+        /// </para>
+        /// </summary>
+        [GONetAutoMagicalSync(
+            GONetAutoMagicalSyncAttribute.PROFILE_TEMPLATE_NAME___EMPTY_USE_ATTRIBUTE_PROPERTIES_DIRECTLY,
+            SyncChangesEverySeconds = AutoMagicalSyncFrequencies.END_OF_FRAME_IN_WHICH_CHANGE_OCCURS_SECONDS, // important that this gets immediately communicated when it changes to avoid other changes related to this participant possibly getting processed before this required prerequisite assignment is made (i.e., other end will not be able to correlate the other changes to this participant if this has not been processed yet)
+            ProcessingPriority_GONetInternalOverride = int.MaxValue - 1,
+            MustRunOnUnityMainThread = true)]
+        public ushort OwnerAuthorityId
+        {
+            get => ownerAuthorityId;
+            internal set
+            {
+                ushort previous = ownerAuthorityId;
+                ownerAuthorityId = value;
+                OnGONetIdComponentChanged_UpdateAllComponents_IfAppropriate(true, gonetId);
+
+                if (ownerAuthorityId == GONetMain.MyAuthorityId)
+                {
+                    WasMineAtAnyPoint = true;
+                }
+
+                if (previous != GONetMain.OwnerAuthorityId_Unset && ownerAuthorityId != GONetMain.OwnerAuthorityId_Unset && previous != ownerAuthorityId)
+                {
+                    OwnerAuthorityId_LastChangedElapsedSeconds = GONetMain.Time.ElapsedSeconds;
+                }
+            }
+        }
+
+        const double OwnerAuthorityId_LastChangedElapsedSeconds_Unset = double.MinValue;
+
+        /// <summary>
+        /// This only gets set when it changed from non-<see cref="GONetMain.OwnerAuthorityId_Unset"/> value to another.
+        /// </summary>
+        public double OwnerAuthorityId_LastChangedElapsedSeconds { get; private set; } = OwnerAuthorityId_LastChangedElapsedSeconds_Unset;
+
+        /// <summary>
+        /// <para>Let's you know if the <see cref="OwnerAuthorityId"/> has changed from non-<see cref="GONetMain.OwnerAuthorityId_Unset"/> value to another at some point, perhaps multiple times.</para>
+        /// <para>See <see cref="OwnerAuthorityId_LastChangedElapsedSeconds"/> to know when the last change like this occurred.</para>
+        /// <para>This would be true if <see cref="GONetMain.Server_AssumeAuthorityOver(GONetParticipant)"/> was called in this.</para>
+        /// </summary>
+        public bool HasChangedAuthorityAtSomePoint => OwnerAuthorityId_LastChangedElapsedSeconds != OwnerAuthorityId_LastChangedElapsedSeconds_Unset;
+
+        /// <summary>
+        /// <para>IMPORTANT: Up until some time during <see cref="Start"/>, the value of <see cref="OwnerAuthorityId"/> will be <see cref="GONetMain.OwnerAuthorityId_Unset"/> and the owner is essentially unknown, which means this method will return false for everyone (even the actual owner).  Once the owner is known, <see cref="GONetParticipant.OwnerAuthorityId"/> value will change and the <see cref="SyncEvent_GONetParticipant_OwnerAuthorityId"/> event will fire (i.e., you should call <see cref="GONetEventBus.Subscribe{T}(GONetEventBus.HandleEventDelegate{T}, GONetEventBus.EventFilterDelegate{T})"/> on <see cref="EventBus"/>)</para>
+        /// <para>Use this to write code that does one thing if you are the owner and another thing if not.</para>
+        /// </summary>
+        public bool IsMine => GONetMain.IsMine(this);
+
+        /// <summary>
+        /// <para>This might be valuable to know for client side GNPs that have since been transferred over to server authority (via <see cref="GONetMain.Server_AssumeAuthorityOver(GONetParticipant)"/>).</para>
+        /// <para>In that case (which is not necessary the case even when this is true), <see cref="IsMine"/> will return false, and this will return true - NOTE: for that exact semantic, use <see cref="IsNoLongerMine"/> instead of this to be more clear.</para>
+        /// <para>Although, it is important to realize both <see cref="IsMine"/> can be true and this be true at same time (i.e., authority was never transferred to server).</para>
+        /// <para>See <see cref="IsNoLongerMine"/> for another semantic look at authority transferring.</para>
+        /// </summary>
+        public bool WasMineAtAnyPoint { get; private set; }
+
+        /// <summary>
+        /// <para>This might be valuable to know for client side GNPs that have since been transferred over to server authority (via <see cref="GONetMain.Server_AssumeAuthorityOver(GONetParticipant)"/>).</para>
+        /// <para>In that case, <see cref="IsMine"/> will return false, and this will return true.</para>
+        /// <para><see cref="IsMine"/> will return false, and this will return true.</para>
+        /// </summary>
+        public bool IsNoLongerMine => WasMineAtAnyPoint && !IsMine;
+
+        /// <summary>
+        /// <para><b>⭐ HIGHLY RECOMMENDED for client-host scenarios.</b> Use this instead of <see cref="IsMine"/> for lifecycle
+        /// decisions (destruction, cleanup, state management) when your game supports client-host or failover scenarios.</para>
+        ///
+        /// <para><b>What this returns:</b> True if this machine is responsible for this object's lifecycle:</para>
+        /// <list type="bullet">
+        ///   <item><see cref="IsMine"/> is true (normal ownership case), OR</item>
+        ///   <item>We are the server AND the owner client is no longer connected (orphaned object responsibility)</item>
+        /// </list>
+        ///
+        /// <para><b>Why this matters for client-host / failover scenarios:</b></para>
+        /// <para>
+        /// When a client-host is promoted to server during failover, objects that were spawned by that same machine
+        /// (but under its OLD client authority ID) will have <see cref="IsMine"/> return <c>false</c> because:
+        /// </para>
+        /// <list type="bullet">
+        ///   <item><see cref="GONetMain.MyAuthorityId"/> changed from client ID (e.g., 2) to server ID (1023)</item>
+        ///   <item><see cref="OwnerAuthorityId"/> still reflects the old client ID (e.g., 2)</item>
+        ///   <item>Therefore <c>IsMine</c> (<c>OwnerAuthorityId == MyAuthorityId</c>) is false</item>
+        /// </list>
+        /// <para>
+        /// These "orphaned" objects need lifecycle management. Without this property, they would linger forever
+        /// because code checking only <see cref="IsMine"/> would skip them.
+        /// </para>
+        ///
+        /// <para><b>Common use cases:</b></para>
+        /// <list type="bullet">
+        ///   <item>Projectile destruction after lifetime expires</item>
+        ///   <item>Temporary effect cleanup (particles, sounds)</item>
+        ///   <item>Any object that should be destroyed/managed by its owner, but needs server fallback</item>
+        /// </list>
+        ///
+        /// <para><b>Example - Projectile cleanup (before vs after):</b></para>
+        /// <code>
+        /// // ❌ PROBLEMATIC with client-host: Orphaned projectiles never destroyed after failover
+        /// if (gonetParticipant.IsMine &amp;&amp; lifetimeExpired)
+        /// {
+        ///     Destroy(gameObject);
+        /// }
+        ///
+        /// // ✅ CORRECT for client-host: Server takes responsibility for orphaned objects
+        /// if (gonetParticipant.IsLocallyResponsible &amp;&amp; lifetimeExpired)
+        /// {
+        ///     Destroy(gameObject);
+        /// }
+        /// </code>
+        ///
+        /// <para><b>When to use <see cref="IsMine"/> vs <see cref="IsLocallyResponsible"/>:</b></para>
+        /// <list type="bullet">
+        ///   <item><see cref="IsMine"/>: Input processing, client-side prediction, visual-only updates</item>
+        ///   <item><see cref="IsLocallyResponsible"/>: Destruction, despawning, state cleanup, any action that
+        ///         should happen even if the original owner disconnected</item>
+        /// </list>
+        ///
+        /// <para><b>Implementation note:</b> This mirrors the logic in <see cref="GONetMain.OnDestroy_AutoPropagateRemoval_IfAppropriate"/>,
+        /// which uses the same pattern to determine if a machine should propagate a despawn event.</para>
+        /// </summary>
+        /// <seealso cref="IsMine"/>
+        /// <seealso cref="GONetMain.Server_IsClientOwnerConnected(GONetParticipant)"/>
+        /// <seealso cref="GONetMain.OnDestroy_AutoPropagateRemoval_IfAppropriate"/>
+        public bool IsLocallyResponsible => IsMine || (GONetMain.IsServer && !GONetMain.Server_IsClientOwnerConnected(this));
+
+        /// <summary>
+        /// This is mainly here to support player controlled <see cref="GONetParticipant"/>s (GNPs) in a strict server authoritative setup where a client/player only submits inputs to have
+        /// the server process remotely and hopefully manipulate this GNP.
+        /// <see cref="IsMine_ToRemotelyControl"/>
+        /// </summary>
+        [GONetAutoMagicalSync(
+            GONetAutoMagicalSyncAttribute.PROFILE_TEMPLATE_NAME___EMPTY_USE_ATTRIBUTE_PROPERTIES_DIRECTLY,
+            SyncChangesEverySeconds = AutoMagicalSyncFrequencies.END_OF_FRAME_IN_WHICH_CHANGE_OCCURS_SECONDS,
+            MustRunOnUnityMainThread = true)]
+        public ushort RemotelyControlledByAuthorityId = GONetMain.OwnerAuthorityId_Unset;
+
+        /// <summary>
+        /// This is mainly here for player controlled <see cref="GONetParticipant"/>s (GNPs) in a strict server authoritative setup where a client/player only submits inputs to have
+        /// the server process remotely and hopefully manipulate this GNP.
+        /// Unless people use <see cref="RemotelyControlledByAuthorityId"/> in a strange way, when this is true, <see cref="IsMine"/> will be false.
+        /// </summary>
+        public bool IsMine_ToRemotelyControl => RemotelyControlledByAuthorityId == GONetMain.MyAuthorityId && GONetMain.MyAuthorityId != GONetMain.OwnerAuthorityId_Unset;
+
+        /// <summary>
+        /// Returns true if this machine should treat the object as locally controlled for input/authority checks.
+        /// This includes both true ownership and server-authoritative borrowing via <see cref="RemotelyControlledByAuthorityId"/>.
+        /// </summary>
+        public bool IsLocallyControlled => IsMine || IsMine_ToRemotelyControl;
+
+        /// <summary>
+        /// True when this participant is managed by the pooling system.
+        /// </summary>
+        public bool IsPooled => isPooled;
+
+        /// <summary>
+        /// True when pooled and currently inactive in the pool (not borrowed).
+        /// </summary>
+        public bool IsPooledInactive => isPooled && isPooledInactive;
+
+        /// <summary>
+        /// Sentinel value indicating no specific spawner (scene objects, world-bound objects).
+        /// Objects with this value are immune to <see cref="GONetHostFailover.ProcessSpawnerDeath"/>.
+        /// </summary>
+        public const ulong SpawnerPersistentId_NoSpawner = 0;
+
+        /// <summary>
+        /// Persistent ID of the machine that spawned this object.
+        /// This value NEVER changes, even during authority transfers (unlike <see cref="OwnerAuthorityId"/>).
+        /// NOT synced via AutoMagicalSync - transmitted once via <see cref="InstantiateGONetParticipantEvent"/>.
+        ///
+        /// <para>
+        /// Special values:
+        /// - 0 (<see cref="SpawnerPersistentId_NoSpawner"/>): Scene object or world-bound object (immune to spawner death cleanup)
+        /// </para>
+        ///
+        /// <para>
+        /// Used in distributed host failover to determine object fate when spawner dies:
+        /// - Objects with <see cref="DesignTimeMetadata.DestroyWhenSpawnerLeaves"/> = true are destroyed
+        /// - Objects with <see cref="DesignTimeMetadata.DestroyWhenSpawnerLeaves"/> = false transfer to new host
+        /// </para>
+        ///
+        /// <para>
+        /// This tracks the SPAWNER (who caused this object to exist), NOT the current authority or logical owner.
+        /// Example: A player fires a projectile → SpawnerPersistentId = player's persistent ID, even though
+        /// the projectile may be owned by the server (OwnerAuthorityId = 1023).
+        /// </para>
+        /// </summary>
+        public ulong SpawnerPersistentId = SpawnerPersistentId_NoSpawner;
+
+        /// <summary>
+        /// DISTRIBUTED HOST FAILOVER: Controls what happens when the machine that spawned this object dies.
+        ///
+        /// <para>
+        /// TRUE (default): Destroy the object when spawner leaves.
+        /// Use for: Player characters, player-owned weapons, player-spawned projectiles.
+        /// These objects are 'bound' to their player/client and should die with them.
+        /// </para>
+        ///
+        /// <para>
+        /// FALSE: Transfer to new host on failover (object survives).
+        /// Use for: World objects, NPCs, doors, tradeable items.
+        /// These objects should persist even when their original spawner leaves.
+        /// </para>
+        ///
+        /// <para>
+        /// NOTE: Scene-defined objects are IMMUNE to spawner death regardless of this setting
+        /// (they have <see cref="SpawnerPersistentId"/> = 0).
+        /// </para>
+        ///
+        /// <para>
+        /// GUIDELINE: If it can be traded or picked up by another player, set to FALSE.
+        /// </para>
+        /// </summary>
+        [SerializeField]
+        private bool destroyWhenSpawnerLeaves = true;
+
+        /// <summary>
+        /// Gets the DestroyWhenSpawnerLeaves setting. This is read-only at runtime.
+        /// </summary>
+        public bool DestroyWhenSpawnerLeaves => destroyWhenSpawnerLeaves;
+
+        /// <summary>
+        /// <para>
+        /// The expectation on setting this to true is the values for <see cref="IsPositionSyncd"/> and <see cref="IsRotationSyncd"/> are true
+        /// and the associated <see cref="GameObject"/> has a <see cref="Rigidbody"/> installed on it as well 
+        /// and <see cref="Rigidbody.isKinematic"/> is false and if using gravity, <see cref="Rigidbody.useGravity"/> is true.
+        /// </para>
+        /// <para>
+        /// For 2D, GONet looks for the presence of <see cref="Rigidbody2D"/> installed and <see cref="Rigidbody2D.isKinematic"/>.
+        /// </para>
+        /// <para>
+        /// If all that applies, then non-owners (i.e., <see cref="IsMine"/> is false) will have <see cref="Rigidbody.isKinematic"/> set to true and <see cref="Rigidbody.useGravity"/> set to false
+        /// so the auto magically sync'd values for position and rotation come from owner controlled actions only.
+        /// </para>
+        /// <para>IMPORTANT: This is not going have an effect if/when changed during a running game.  This needs to be set during design time.  Maybe a future release will decorate it with <see cref="GONetAutoMagicalSyncAttribute"/>, if people need it.</para>
+        /// </summary>
+        public bool IsRigidBodyOwnerOnlyControlled;
+
+        /// <summary>
+        /// <para>
+        /// This is an option (good for projectiles) to deal with there being an inherent delay of <see cref="GONetMain.valueBlendingBufferLeadSeconds"/> from the time a
+        /// remote instantiation of this <see cref="GONetParticipant"/> (and <see cref="IsMine"/> is false) occurs and the time auto-magical sync data starts processing for value blending 
+        /// (i.e., <see cref="GONetAutoMagicalSyncSettings_ProfileTemplate.ShouldBlendBetweenValuesReceived"/> and <see cref="GONetAutoMagicalSyncAttribute.ShouldBlendBetweenValuesReceived"/>).
+        /// </para>
+        /// <para>
+        /// When this option is set to true, all <see cref="Renderer"/> components on this (including children) are turned off during the buffer lead time delay and then turned back on.
+        /// </para>
+        /// <para>
+        /// If this option does not exactly suit your needs and you want something similar, then just subscribe using <see cref="GONetMain.EventBus"/> to the <see cref="GONetParticipantStartedEvent"/>
+        /// and check if that event's envelope has <see cref="GONetEventEnvelope.IsSourceRemote"/> set to true and you can implement your own option to deal with this situation.
+        /// </para>
+        /// </summary>
+        public bool ShouldHideDuringRemoteInstantiate;
+
+        /// <summary>
+        /// <para>
+        /// If true, automatically calls <see cref="UnityEngine.Object.DontDestroyOnLoad(UnityEngine.Object)"/> on this GameObject when instantiated.
+        /// This ensures the object persists across scene changes.
+        /// </para>
+        /// <para>
+        /// <b>IMPORTANT:</b> This flag must be set BEFORE the GONetParticipant is enabled/started.
+        /// For runtime-spawned objects, set this in the prefab or immediately after instantiation before GONet processes it.
+        /// For scene-defined objects, set this in the inspector.
+        /// </para>
+        /// <para>
+        /// <b>NOTE:</b> GONet uses this flag to properly track which scene spawns belong to.
+        /// If you manually call DontDestroyOnLoad() without setting this flag, GONet may incorrectly
+        /// associate the object with a scene during late-joiner synchronization.
+        /// </para>
+        /// </summary>
+        [Tooltip("If true, automatically calls DontDestroyOnLoad on this GameObject when instantiated. Must be set before GONetParticipant is enabled.")]
+        public bool AutoDontDestroyOnLoad;
+
+        #region CLIENT LIMBO MODE CONFIGURATION (Advanced - Rarely Needed)
+
+        /// <summary>
+        /// CLIENT ONLY: Override project-wide limbo behavior for THIS prefab when GONetId batch is exhausted.
+        ///
+        /// IMPORTANT: Limbo is RARE - only occurs during extreme rapid spawning (100+ spawns/sec).
+        /// Most games will NEVER encounter this. Only configure if spawning at massive rates.
+        ///
+        /// Leave unchecked to use GONet Project Settings default.
+        /// Check to override with custom behavior for this specific prefab.
+        /// </summary>
+        [Header("Client Batch Limbo Override (Advanced - Rarely Needed)")]
+        [Tooltip("Override project-wide limbo behavior for THIS prefab when batch IDs exhausted.\n\n" +
+                 "IMPORTANT: Limbo is RARE - only during extreme rapid spawning (100+ spawns/sec).\n\n" +
+                 "Unchecked = Use GONet Project Settings default\n" +
+                 "Checked = Use custom mode below for this prefab")]
+        public bool client_overrideLimboMode = false;
+
+        /// <summary>
+        /// CLIENT ONLY: Custom limbo mode for this prefab (only used if client_overrideLimboMode is true).
+        /// See <see cref="Client_GONetIdBatchLimboMode"/> for mode descriptions.
+        /// </summary>
+        [Tooltip("Custom limbo mode for this prefab (only if Override checkbox is checked).\n\n" +
+                 "See CLIENT_LIMBO_MODE_IMPLEMENTATION_PLAN.md for details on each mode.")]
+        public Client_GONetIdBatchLimboMode client_limboMode = Client_GONetIdBatchLimboMode.InstantiateInLimboWithAutoDisableRenderingAndPhysics;
+
+        #endregion
+
+        #region CLIENT LIMBO STATE TRACKING (Internal - Do Not Modify)
+
+        /// <summary>
+        /// CLIENT ONLY: Is this object in "limbo" state?
+        /// Limbo = exists locally but has no GONetId (waiting for batch from server).
+        /// Object is NOT networked, cannot sync, cannot receive RPCs.
+        /// Will "graduate" to networked when batch arrives.
+        /// </summary>
+        public bool Client_IsInLimbo => client_isInLimbo;
+
+        // INTERNAL TRACKING - DO NOT MODIFY THESE FIELDS
+        [NonSerialized] internal bool client_isInLimbo = false;
+
+        // Option 1 tracking (DisableAll):
+        [NonSerialized] internal List<MonoBehaviour> client_limboDisabledComponents;
+
+        // Option 2 tracking (DisableRenderingAndPhysics):
+        [NonSerialized] internal List<Renderer> client_limboDisabledRenderers;
+        [NonSerialized] internal List<Collider> client_limboDisabledColliders;
+        [NonSerialized] internal List<Collider2D> client_limboDisabledColliders2D;
+        [NonSerialized] internal Rigidbody client_limboRigidbody;
+        [NonSerialized] internal Rigidbody2D client_limboRigidbody2D;
+        [NonSerialized] internal bool client_limboRigidbodyWasKinematic;
+        [NonSerialized] internal RigidbodyType2D client_limboRigidbody2DOriginalType;
+
+        #endregion
+
+        #region POOLING STATE (Internal - Do Not Modify)
+
+        [NonSerialized] internal bool isPooled = false;
+        [NonSerialized] internal bool isPoolBorrowInProgress = false;
+        [NonSerialized] internal bool isPoolReturnInProgress = false;
+        [NonSerialized] internal bool isPooledInactive = false;
+        [NonSerialized] internal bool isPoolDestructionInProgress = false;
+
+        #endregion
+
+        #region LIFECYCLE TRACKING FOR ONGONETREADY (Internal - Do Not Modify)
+
+        /// <summary>
+        /// Tracks Unity lifecycle completion state for OnGONetReady gate.
+        /// OnGONetReady will NOT fire until both didAwakeComplete and didStartComplete are true.
+        /// </summary>
+        [NonSerialized] internal bool didAwakeComplete = false;
+        [NonSerialized] internal bool didStartComplete = false;
+
+        /// <summary>
+        /// Tracks whether DeserializeInitAllCompleted is required for this participant.
+        ///
+        /// TRUE for:
+        /// - Scene-defined objects with IsMine = false (clients receiving sync from server)
+        /// - Runtime spawns received via InstantiateGONetParticipantEvent (remote spawns)
+        ///
+        /// FALSE for:
+        /// - Scene-defined objects with IsMine = true (server authority, no deserialization needed)
+        /// - Runtime spawns with IsMine = true (local authority, spawned by this machine)
+        /// - Limbo objects (local authority, client spawned)
+        /// </summary>
+        [NonSerialized] internal bool requiresDeserializeInit = false;
+
+        /// <summary>
+        /// Tracks whether DeserializeInitAllCompleted has occurred.
+        /// Only relevant if requiresDeserializeInit = true.
+        /// </summary>
+        [NonSerialized] internal bool didDeserializeInitComplete = false;
+
+        /// <summary>
+        /// Tracks whether OnGONetReady has already been called for this participant.
+        /// Prevents duplicate calls across multiple gate check invocations.
+        /// </summary>
+        [NonSerialized] internal bool didOnGONetReadyFire = false;
+
+        /// <summary>
+        /// HOST MODE DIAGNOSTIC: Tracks if we've logged the "not ready" reason for this participant.
+        /// Prevents log spam while still providing useful diagnostic info.
+        /// </summary>
+        [NonSerialized] internal bool didLogNotReadyReason = false;
+
+        /// <summary>
+        /// GONet v2: Tracks whether this participant is registered in the SoA (Structure-of-Arrays) blending system.
+        /// When true, Transform sync uses lock-free ring buffers + Burst jobs instead of v1 event bus.
+        /// Set during RegisterObjectInSoA() call in GONet.cs.
+        /// </summary>
+        [NonSerialized] internal bool v2_isRegisteredInSoA = false;
+
+        /// <summary>
+        /// Marks this participant as requiring DeserializeInitAllCompleted before OnGONetReady.
+        /// Called for objects that will receive remote sync data.
+        /// </summary>
+        internal void MarkRequiresDeserializeInit()
+        {
+            requiresDeserializeInit = true;
+            // Don't check gate yet - deserialization hasn't happened
+        }
+
+        /// <summary>
+        /// Marks DeserializeInitAllCompleted as complete and checks OnGONetReady gate.
+        /// Called when remote sync data has been processed.
+        /// </summary>
+        internal void MarkDeserializeInitComplete()
+        {
+            didDeserializeInitComplete = true;
+            GONetMain.CheckAndPublishOnGONetReady_IfAllConditionsMet(this);
+        }
+
+        /// <summary>
+        /// Clears the deserialization requirement. Used during host failover when a client
+        /// becomes the server and takes over authority of objects that were previously waiting
+        /// for remote sync data. Since we're now the authority, we don't need to wait.
+        /// </summary>
+        internal void ClearDeserializeInitRequirement()
+        {
+            requiresDeserializeInit = false;
+            didDeserializeInitComplete = true; // Mark as complete so IsGONetReady() passes this check
+            GONetMain.CheckAndPublishOnGONetReady_IfAllConditionsMet(this);
+        }
+
+        #endregion
+
+        #region REPARENTING SUPPORT (For ReparentGONetParticipantEvent)
+
+        /// <summary>
+        /// Original parent's GONetId at spawn time (for self-cancel detection in ReparentGONetParticipantEvent).
+        /// 0 = world root OR non-GNP parent (check OriginalParentFullUniquePath).
+        /// Captured once at spawn time and never modified.
+        /// </summary>
+        [NonSerialized] internal uint originalParentGONetId = GONetParticipant.GONetId_Unset;
+
+        /// <summary>
+        /// Original parent's full unique path at spawn time (fallback for non-GNP parents).
+        /// Empty string = world root (when originalParentGONetId is also 0).
+        /// Non-empty = path to non-GNP container.
+        /// Captured once at spawn time and never modified.
+        /// </summary>
+        [NonSerialized] internal string originalParentFullUniquePath = string.Empty;
+
+        /// <summary>
+        /// Original parent's unique path relative to the anchor GNP identified by originalParentGONetId.
+        /// Empty string means originalParentGONetId is the direct parent GNP or world root.
+        /// Captured once at spawn time and never modified.
+        /// </summary>
+        [NonSerialized] internal string originalParentRelativePath = string.Empty;
+
+        /// <summary>
+        /// If true, suppresses automatic publishing of ReparentGONetParticipantEvent in OnTransformParentChanged.
+        /// Used to prevent network events during:
+        /// - Remote reparent apply (would cause infinite loop)
+        /// - Late-joiner persistent event replay
+        /// </summary>
+        [NonSerialized] internal bool suppressReparentEvent = false;
+
+        /// <summary>
+        /// Tracks whether the original parent info has been captured.
+        /// Set to true in Start() after capturing parent info.
+        /// </summary>
+        [NonSerialized] internal bool didCaptureOriginalParent = false;
+
+        /// <summary>
+        /// Pending ReparentGONetParticipantEvent waiting for FinalizeReparentOffset() or auto-publish.
+        /// When reparent happens, event is created but NOT published immediately.
+        /// Gameplay code can call FinalizeReparentOffset() to set custom offsets.
+        /// If not finalized within ReparentAutoPublishDelayFrames, auto-publishes with current localPosition/Rotation.
+        /// </summary>
+        [NonSerialized] internal ReparentGONetParticipantEvent pendingReparentEvent = null;
+
+        /// <summary>
+        /// Frame count when pendingReparentEvent was created. Used for auto-publish timeout.
+        /// </summary>
+        [NonSerialized] internal int pendingReparentEventFrameCreated = -1;
+
+        #endregion
+
+        #region TRANSFORM SYNC SUSPENSION (For Nested GONetParticipants)
+
+        /// <summary>
+        /// If true, transform sync (position/rotation) is suspended because this GNP is parented
+        /// under another GNP that has IsPositionSyncd or IsRotationSyncd enabled.
+        /// This prevents hierarchy ordering desync issues.
+        /// </summary>
+        [NonSerialized] internal bool isTransformSyncSuspendedDueToParenting = false;
+
+        /// <summary>
+        /// If transform sync was suspended, this stores the original IsPositionSyncd value to restore later.
+        /// </summary>
+        [NonSerialized] internal bool suspendedIsPositionSyncd = false;
+
+        /// <summary>
+        /// If transform sync was suspended, this stores the original IsRotationSyncd value to restore later.
+        /// </summary>
+        [NonSerialized] internal bool suspendedIsRotationSyncd = false;
+
+        /// <summary>
+        /// If Rigidbody was set to kinematic due to transform sync suspension, stores original state for restoration.
+        /// </summary>
+        [NonSerialized] internal bool suspendedRigidbodyWasKinematic = false;
+
+        /// <summary>
+        /// If Rigidbody gravity was disabled due to reparenting, stores original state for restoration.
+        /// </summary>
+        [NonSerialized] internal bool suspendedRigidbodyWasUseGravity = true;
+
+        /// <summary>
+        /// True if we have saved original physics state due to reparenting (for non-synced parent cases).
+        /// Used to restore correct state on detach when SuspendTransformSync was not called.
+        /// </summary>
+        [NonSerialized] internal bool hasReparentPhysicsStateSaved = false;
+
+        /// <summary>
+        /// REPARENT POSITION GUARD (Jan 2026): Stores the intended local position when parented.
+        /// This is the authoritative value that should be enforced even if blending/sync tries to overwrite it.
+        /// </summary>
+        [NonSerialized] internal Vector3 reparentGuardLocalPosition;
+
+        /// <summary>
+        /// REPARENT POSITION GUARD (Jan 2026): Stores the intended local rotation when parented.
+        /// This is the authoritative value that should be enforced even if blending/sync tries to overwrite it.
+        /// </summary>
+        [NonSerialized] internal Quaternion reparentGuardLocalRotation;
+
+        /// <summary>
+        /// REPARENT POSITION GUARD: True if we have valid guard values to enforce.
+        /// </summary>
+        [NonSerialized] internal bool hasReparentGuardValues = false;
+
+        /// <summary>
+        /// REPARENT POSITION GUARD: The parent transform that the guard values are relative to.
+        /// If the current parent doesn't match, the guard values are invalid and should not be enforced.
+        /// This prevents the guard from "correcting" position when a client locally unparents before
+        /// the server's reparent event arrives.
+        /// </summary>
+        [NonSerialized] internal Transform reparentGuardParent;
+
+        /// <summary>
+        /// CLIENT DROP FIX: When true, indicates this client initiated a drop action locally.
+        /// When the reparent event arrives from server, the client's current position should be
+        /// preserved instead of using the server's position (which may be delayed/outdated).
+        /// Call MarkLocalDropInitiated() before sending the drop RPC to set this flag.
+        /// </summary>
+        [NonSerialized] internal bool localClientInitiatedDrop = false;
+
+        /// <summary>
+        /// CLIENT DROP FIX: The world position to preserve when a local drop is detected.
+        /// Captured when MarkLocalDropInitiated() is called.
+        /// </summary>
+        [NonSerialized] internal Vector3 localDropPreservedPosition;
+
+        /// <summary>
+        /// CLIENT DROP FIX: The world rotation to preserve when a local drop is detected.
+        /// Captured when MarkLocalDropInitiated() is called.
+        /// </summary>
+        [NonSerialized] internal Quaternion localDropPreservedRotation;
+
+        /// <summary>
+        /// REPARENT POSITION GUARD: If true, disables the position guard for THIS specific instance.
+        /// Set this to true if you need to manually sync or animate the child's local position/rotation
+        /// while parented to another GONetParticipant.
+        ///
+        /// Use cases:
+        /// - Animating a child's local position/rotation (e.g., bobbing, swaying, rotating turrets)
+        /// - Manually syncing local transform via custom [GONetAutoMagicalSync] properties
+        /// - Physics-driven child objects that should simulate locally
+        ///
+        /// When disabled, you are responsible for syncing the child's local transform yourself.
+        /// See also: GONetConfig.EnableReparentPositionGuard for global toggle.
+        /// </summary>
+        [NonSerialized] public bool disableReparentPositionGuard = false;
+
+        /// <summary>
+        /// Public property to check if transform sync is suspended due to parenting.
+        /// When true, SoA_ValueApplicator should skip applying position/rotation syncs to this participant.
+        /// </summary>
+        public bool IsTransformSyncSuspendedDueToParenting => isTransformSyncSuspendedDueToParenting;
+
+        /// <summary>
+        /// Suspends transform sync for this participant (when parented under another syncd GNP).
+        /// Also handles full physics state management: kinematic, gravity, and velocities.
+        /// </summary>
+        internal void SuspendTransformSync()
+        {
+            if (isTransformSyncSuspendedDueToParenting) return; // Already suspended
+
+            suspendedIsPositionSyncd = IsPositionSyncd;
+            suspendedIsRotationSyncd = IsRotationSyncd;
+
+            // Don't change IsPositionSyncd/IsRotationSyncd - SoA_ValueApplicator will check the suspension flag
+            isTransformSyncSuspendedDueToParenting = true;
+
+            // Handle full Rigidbody physics state to prevent physics fighting with parent sync
+            if (GONetConfig.AutoKinematicOnTransformSyncSuspension && myRigidBody != null)
+            {
+                // Save original state BEFORE modifying (only if not already saved by ApplyReparentEvent)
+                if (!hasReparentPhysicsStateSaved)
+                {
+                    suspendedRigidbodyWasKinematic = myRigidBody.isKinematic;
+                    suspendedRigidbodyWasUseGravity = myRigidBody.useGravity;
+                    hasReparentPhysicsStateSaved = true;
+                }
+
+                // Disable physics completely
+                // IMPORTANT: Zero velocities BEFORE setting kinematic (Unity doesn't allow setting velocity on kinematic bodies)
+                if (!myRigidBody.isKinematic)
+                {
+#if UNITY_6000_0_OR_NEWER
+                    myRigidBody.linearVelocity = Vector3.zero;
+#else
+                    myRigidBody.velocity = Vector3.zero;
+#endif
+                    myRigidBody.angularVelocity = Vector3.zero;
+                    myRigidBody.isKinematic = true;
+                }
+                myRigidBody.useGravity = false;
+            }
+
+            if (GONetConfig.LogReparentDiagnostics)
+            {
+                GONetLog.Debug($"[REPARENT] Transform sync SUSPENDED for '{name}' (GONetId {GONetId}) - " +
+                              $"was: Position={suspendedIsPositionSyncd}, Rotation={suspendedIsRotationSyncd}, " +
+                              $"Kinematic={suspendedRigidbodyWasKinematic}, UseGravity={suspendedRigidbodyWasUseGravity}");
+            }
+        }
+
+        /// <summary>
+        /// Resumes transform sync for this participant (when unparented from syncd GNP).
+        /// Also restores full physics state: kinematic and gravity.
+        /// </summary>
+        internal void ResumeTransformSync()
+        {
+            if (!isTransformSyncSuspendedDueToParenting) return; // Not suspended
+
+            isTransformSyncSuspendedDueToParenting = false;
+
+            // Clear reparent guard values since we're no longer parented
+            hasReparentGuardValues = false;
+            reparentGuardParent = null;
+
+            // Restore full Rigidbody physics state
+            if (GONetConfig.AutoKinematicOnTransformSyncSuspension && myRigidBody != null && hasReparentPhysicsStateSaved)
+            {
+                myRigidBody.isKinematic = suspendedRigidbodyWasKinematic;
+                myRigidBody.useGravity = suspendedRigidbodyWasUseGravity;
+                hasReparentPhysicsStateSaved = false;
+            }
+
+            if (GONetConfig.LogReparentDiagnostics)
+            {
+                GONetLog.Debug($"[REPARENT] Transform sync RESUMED for '{name}' (GONetId {GONetId}) - " +
+                              $"restoring: Position={suspendedIsPositionSyncd}, Rotation={suspendedIsRotationSyncd}, " +
+                              $"Kinematic={suspendedRigidbodyWasKinematic}, UseGravity={suspendedRigidbodyWasUseGravity}");
+            }
+        }
+
+        /// <summary>
+        /// REPARENT POSITION GUARD (Jan 2026): Sets the intended local offset values for this reparented child.
+        /// Call this after reparenting to establish the authoritative local position/rotation that should be enforced.
+        /// These values will be checked every frame and re-applied if any sync/blending path overwrites them.
+        /// </summary>
+        internal void SetReparentGuardValues(Vector3 localPosition, Quaternion localRotation)
+        {
+            reparentGuardLocalPosition = localPosition;
+            reparentGuardLocalRotation = localRotation;
+            reparentGuardParent = transform.parent; // Track what parent these values are relative to
+            hasReparentGuardValues = true;
+
+            if (GONetConfig.LogReparentDiagnostics)
+            {
+                string parentName = reparentGuardParent != null ? reparentGuardParent.name : "NULL(WorldRoot)";
+                GONetLog.Debug($"[REPARENT-GUARD] Set guard values for '{name}' (GONetId {GONetId}) - pos={localPosition}, rot={localRotation.eulerAngles}, parent='{parentName}'");
+            }
+        }
+
+        /// <summary>
+        /// Updates the reparent position guard values to new local offsets.
+        /// Call this if you legitimately need to change the child's local position/rotation while parented
+        /// and want the guard to enforce the new values instead of the original reparent values.
+        ///
+        /// Example use case: A turret child that rotates - update the guard rotation when the authority
+        /// changes the turret's aim direction.
+        ///
+        /// Note: If you need continuous/animated local movement, consider setting disableReparentPositionGuard = true
+        /// and manually syncing the local transform via custom [GONetAutoMagicalSync] properties.
+        /// </summary>
+        /// <param name="newLocalPosition">New local position to enforce (null = keep current guard position)</param>
+        /// <param name="newLocalRotation">New local rotation to enforce (null = keep current guard rotation)</param>
+        public void UpdateReparentGuardValues(Vector3? newLocalPosition = null, Quaternion? newLocalRotation = null)
+        {
+            if (!hasReparentGuardValues)
+            {
+                GONetLog.Warning($"[REPARENT-GUARD] UpdateReparentGuardValues called on '{name}' but no guard values exist (not parented to synced GNP?)");
+                return;
+            }
+
+            if (newLocalPosition.HasValue)
+            {
+                reparentGuardLocalPosition = newLocalPosition.Value;
+            }
+
+            if (newLocalRotation.HasValue)
+            {
+                reparentGuardLocalRotation = newLocalRotation.Value;
+            }
+
+            if (GONetConfig.LogReparentDiagnostics)
+            {
+                GONetLog.Debug($"[REPARENT-GUARD] Updated guard values for '{name}' (GONetId {GONetId}) - pos={reparentGuardLocalPosition}, rot={reparentGuardLocalRotation.eulerAngles}");
+            }
+        }
+
+        /// <summary>
+        /// CLIENT DROP FIX: Call this BEFORE sending a drop RPC to mark that the local client
+        /// initiated a drop. When the server's reparent event arrives, the client's current
+        /// position (captured here) will be used instead of the server's position.
+        ///
+        /// This is necessary because the server may have a delayed view of where the client's
+        /// player is, resulting in the dropped item appearing at the wrong location on the client.
+        /// </summary>
+        public void MarkLocalDropInitiated()
+        {
+            localClientInitiatedDrop = true;
+            localDropPreservedPosition = transform.position;
+            localDropPreservedRotation = transform.rotation;
+
+            if (GONetConfig.LogReparentDiagnostics)
+            {
+                GONetLog.Debug($"[REPARENT-DROP-FIX] Marked local drop initiated for '{name}' (GONetId {GONetId}) - " +
+                              $"preserving worldPos={localDropPreservedPosition}");
+            }
+        }
+
+        /// <summary>
+        /// CLIENT DROP FIX: Clears the local drop flag after processing.
+        /// Called internally by ApplyReparentEvent.
+        /// </summary>
+        internal void ClearLocalDropFlag()
+        {
+            if (localClientInitiatedDrop && GONetConfig.LogReparentDiagnostics)
+            {
+                GONetLog.Debug($"[REPARENT-DROP-FIX] Cleared local drop flag for '{name}' (GONetId {GONetId})");
+            }
+            localClientInitiatedDrop = false;
+        }
+
+        /// <summary>
+        /// POOLING: Clears reparenting-related state so pooled objects don't carry
+        /// suspension/guard flags into the next borrow.
+        /// </summary>
+        internal void ResetReparentingStateForPooling()
+        {
+            suppressReparentEvent = false;
+            pendingReparentEvent = null;
+            pendingReparentEventFrameCreated = -1;
+
+            ClearLocalDropFlag();
+            localDropPreservedPosition = Vector3.zero;
+            localDropPreservedRotation = Quaternion.identity;
+
+            if (isTransformSyncSuspendedDueToParenting)
+            {
+                ResumeTransformSync();
+            }
+            else
+            {
+                if (hasReparentGuardValues)
+                {
+                    hasReparentGuardValues = false;
+                    reparentGuardParent = null;
+                }
+
+                if (hasReparentPhysicsStateSaved)
+                {
+                    if (GONetConfig.AutoKinematicOnTransformSyncSuspension && myRigidBody != null)
+                    {
+                        myRigidBody.isKinematic = suspendedRigidbodyWasKinematic;
+                        myRigidBody.useGravity = suspendedRigidbodyWasUseGravity;
+                    }
+                    hasReparentPhysicsStateSaved = false;
+                }
+            }
+        }
+
+        #endregion
+
+        #region ANIMATOR TRIGGER SYNC SUPPORT (For AnimatorTriggerFiredEvent)
+
+        /// <summary>
+        /// Cached Animator component reference for trigger sync. Retrieved on first use.
+        /// </summary>
+        [NonSerialized] private Animator cachedAnimator;
+
+        /// <summary>
+        /// Gets the Animator component on this GONetParticipant, with caching.
+        /// </summary>
+        private Animator GetAnimator()
+        {
+            if (cachedAnimator == null)
+            {
+                cachedAnimator = GetComponent<Animator>();
+            }
+            return cachedAnimator;
+        }
+
+        /// <summary>
+        /// <para>
+        /// Sets an Animator Trigger parameter and synchronizes it across the network.
+        /// </para>
+        /// <para>
+        /// <b>IMPORTANT:</b> Use this method instead of <see cref="Animator.SetTrigger(int)"/> for networked trigger parameters.
+        /// Unity has no Animator.GetTrigger() method, so GONet cannot use value-based sync for triggers.
+        /// This method uses the persistent event system to ensure triggers are synchronized.
+        /// </para>
+        /// <para>
+        /// <b>Authority:</b> Only the authority (IsMine=true) should call this method.
+        /// Non-authority machines receive the trigger via <see cref="AnimatorTriggerFiredEvent"/>.
+        /// </para>
+        /// <para>
+        /// <b>Late-Joiner Behavior:</b>
+        /// The trigger event is automatically reset at the end of the frame, ensuring late-joiners
+        /// do not receive stale triggers for animations that have already completed.
+        /// </para>
+        /// <para>
+        /// <b>Performance Tip:</b> Use pre-computed hash constants from <see cref="AnimatorTriggerHashes"/> for best performance.
+        /// Run GONet code generation to populate <see cref="AnimatorTriggerHashes"/> with your project's trigger names.
+        /// </para>
+        /// </summary>
+        /// <param name="triggerNameHash">The hash of the trigger parameter name. Use constants from <see cref="AnimatorTriggerHashes"/>
+        /// or compute manually with <see cref="Animator.StringToHash"/>.</param>
+        /// <example>
+        /// <code>
+        /// // Best: Use auto-generated hash constants (run GONet code generation first)
+        /// gonetParticipant.SetAnimatorTrigger(AnimatorTriggerHashes.Jump);
+        ///
+        /// // Alternative: Pre-compute hash manually
+        /// private static readonly int JumpHash = Animator.StringToHash("Jump");
+        /// gonetParticipant.SetAnimatorTrigger(JumpHash);
+        /// </code>
+        /// </example>
+        /// <seealso cref="AnimatorTriggerHashes"/>
+        /// <seealso cref="SetAnimatorTrigger(string)"/>
+        /// <seealso cref="GONetParticipantCompanionBehaviour.SetAnimatorTrigger(int)"/>
+        public void SetAnimatorTrigger(int triggerNameHash)
+        {
+            // Validate GONetId is assigned
+            if (GONetId == GONetId_Unset)
+            {
+                GONetLog.Warning($"[ANIMATOR-TRIGGER] SetAnimatorTrigger called on '{name}' but GONetId is not assigned. Trigger will only be applied locally.");
+                // Still apply locally for authority
+                Animator animator = GetAnimator();
+                if (animator != null)
+                {
+                    animator.SetTrigger(triggerNameHash);
+                }
+                return;
+            }
+
+            // Apply trigger locally on authority
+            Animator localAnimator = GetAnimator();
+            if (localAnimator != null)
+            {
+                localAnimator.SetTrigger(triggerNameHash);
+            }
+            else
+            {
+                GONetLog.Warning($"[ANIMATOR-TRIGGER] SetAnimatorTrigger called on '{name}' but no Animator component found.");
+                return;
+            }
+
+            // Publish the event for network synchronization
+            var firedEvent = new AnimatorTriggerFiredEvent(
+                GONetId,
+                triggerNameHash,
+                GONetMain.MyAuthorityId,
+                GONetMain.Time.ElapsedTicks
+            );
+            GONetMain.EventBus.Publish(firedEvent);
+
+            if (GONetConfig.LogAnimatorTriggerDiagnostics)
+            {
+                GONetLog.Debug($"[ANIMATOR-TRIGGER] Published AnimatorTriggerFiredEvent for '{name}' (GONetId {GONetId}) TriggerHash:{triggerNameHash}");
+            }
+
+            // Schedule the reset event at end of frame to cancel the fired event from persistent history
+            StartCoroutine(PublishTriggerResetAtEndOfFrame(triggerNameHash));
+        }
+
+        /// <summary>
+        /// <para>
+        /// Sets an Animator Trigger parameter and synchronizes it across the network.
+        /// </para>
+        /// <para>
+        /// This is a convenience overload that converts the trigger name to a hash at runtime.
+        /// For better performance, use <see cref="SetAnimatorTrigger(int)"/> with pre-computed hash constants
+        /// from <see cref="AnimatorTriggerHashes"/>.
+        /// </para>
+        /// </summary>
+        /// <param name="triggerName">The name of the trigger parameter.</param>
+        /// <example>
+        /// <code>
+        /// // Convenient but slower (computes hash each call):
+        /// gonetParticipant.SetAnimatorTrigger("Attack");
+        ///
+        /// // Better performance - use AnimatorTriggerHashes constants:
+        /// gonetParticipant.SetAnimatorTrigger(AnimatorTriggerHashes.Attack);
+        /// </code>
+        /// </example>
+        /// <seealso cref="AnimatorTriggerHashes"/>
+        /// <seealso cref="SetAnimatorTrigger(int)"/>
+        public void SetAnimatorTrigger(string triggerName)
+        {
+            SetAnimatorTrigger(Animator.StringToHash(triggerName));
+        }
+
+        /// <summary>
+        /// <para>
+        /// Manually resets an Animator Trigger for network synchronization purposes.
+        /// </para>
+        /// <para>
+        /// <b>NOTE:</b> You rarely need to call this method directly.
+        /// <see cref="SetAnimatorTrigger(int)"/> automatically publishes a reset event at the end of the frame.
+        /// Only use this if you need to manually control when the reset event is sent.
+        /// </para>
+        /// </summary>
+        /// <param name="triggerNameHash">The hash of the trigger parameter name. Use constants from <see cref="AnimatorTriggerHashes"/>
+        /// or compute manually with <see cref="Animator.StringToHash"/>.</param>
+        /// <seealso cref="AnimatorTriggerHashes"/>
+        /// <seealso cref="ResetAnimatorTrigger(string)"/>
+        public void ResetAnimatorTrigger(int triggerNameHash)
+        {
+            if (GONetId == GONetId_Unset)
+            {
+                GONetLog.Warning($"[ANIMATOR-TRIGGER] ResetAnimatorTrigger called on '{name}' but GONetId is not assigned.");
+                return;
+            }
+
+            var resetEvent = new AnimatorTriggerResetEvent(
+                GONetId,
+                triggerNameHash,
+                GONetMain.MyAuthorityId,
+                GONetMain.Time.ElapsedTicks
+            );
+            GONetMain.EventBus.Publish(resetEvent);
+
+            if (GONetConfig.LogAnimatorTriggerDiagnostics)
+            {
+                GONetLog.Debug($"[ANIMATOR-TRIGGER] Published AnimatorTriggerResetEvent for '{name}' (GONetId {GONetId}) TriggerHash:{triggerNameHash}");
+            }
+        }
+
+        /// <summary>
+        /// <para>
+        /// Convenience overload for <see cref="ResetAnimatorTrigger(int)"/> using trigger name.
+        /// </para>
+        /// <para>
+        /// For better performance, use <see cref="ResetAnimatorTrigger(int)"/> with pre-computed hash constants
+        /// from <see cref="AnimatorTriggerHashes"/>.
+        /// </para>
+        /// </summary>
+        /// <param name="triggerName">The name of the trigger parameter.</param>
+        /// <seealso cref="AnimatorTriggerHashes"/>
+        /// <seealso cref="ResetAnimatorTrigger(int)"/>
+        public void ResetAnimatorTrigger(string triggerName)
+        {
+            ResetAnimatorTrigger(Animator.StringToHash(triggerName));
+        }
+
+        /// <summary>
+        /// Coroutine that publishes the AnimatorTriggerResetEvent at the end of the current frame.
+        /// This ensures the trigger event is removed from persistent history so late-joiners don't receive stale triggers.
+        /// </summary>
+        private System.Collections.IEnumerator PublishTriggerResetAtEndOfFrame(int triggerNameHash)
+        {
+            yield return new WaitForEndOfFrame();
+
+            // Safety check in case object was destroyed mid-frame
+            if (this == null || GONetId == GONetId_Unset)
+            {
+                yield break;
+            }
+
+            var resetEvent = new AnimatorTriggerResetEvent(
+                GONetId,
+                triggerNameHash,
+                GONetMain.MyAuthorityId,
+                GONetMain.Time.ElapsedTicks
+            );
+            GONetMain.EventBus.Publish(resetEvent);
+
+            if (GONetConfig.LogAnimatorTriggerDiagnostics)
+            {
+                GONetLog.Debug($"[ANIMATOR-TRIGGER] Auto-published AnimatorTriggerResetEvent for '{name}' (GONetId {GONetId}) TriggerHash:{triggerNameHash}");
+            }
+        }
+
+        /// <summary>
+        /// Internal method called by <see cref="GONetMain"/> when a remote <see cref="AnimatorTriggerFiredEvent"/> is received.
+        /// Applies the trigger to the local Animator.
+        /// </summary>
+        /// <param name="triggerNameHash">The hash of the trigger parameter name.</param>
+        internal void ApplyNetworkedTrigger(int triggerNameHash)
+        {
+            Animator animator = GetAnimator();
+            if (animator != null)
+            {
+                animator.SetTrigger(triggerNameHash);
+
+                if (GONetConfig.LogAnimatorTriggerDiagnostics)
+                {
+                    GONetLog.Debug($"[ANIMATOR-TRIGGER] Applied remote trigger to '{name}' (GONetId {GONetId}) TriggerHash:{triggerNameHash}");
+                }
+            }
+            else
+            {
+                GONetLog.Warning($"[ANIMATOR-TRIGGER] Cannot apply trigger to '{name}' - no Animator component found.");
+            }
+        }
+
+        /// <summary>
+        /// <para>PERFORMANCE OPTIMIZATION: Refreshes the cached animator parameter sync states.</para>
+        /// <para>Call this method if you modify <see cref="animatorSyncSupport"/> at runtime
+        /// (e.g., toggling isSyncd for specific parameters).</para>
+        /// <para>Normally you don't need to call this - the cache is initialized automatically
+        /// at companion creation time. Only call this if you change animatorSyncSupport dynamically.</para>
+        /// </summary>
+        /// <remarks>
+        /// The animator sync system caches whether each parameter should be synced to avoid
+        /// expensive dictionary lookups every physics frame. If you change animatorSyncSupport
+        /// at runtime, call this method to update the cache.
+        /// </remarks>
+        public void RefreshAnimatorSyncCache()
+        {
+            var syncCompanion = GONetMain.GetSyncCompanionByGNP(this);
+            if (syncCompanion == null)
+            {
+                return; // Companion not yet initialized
+            }
+
+            var valuesChangesSupport = syncCompanion.valuesChangesSupport;
+            if (valuesChangesSupport == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < syncCompanion.valuesCount; i++)
+            {
+                var support = valuesChangesSupport[i];
+                if (!string.IsNullOrEmpty(support.animatorParameterName))
+                {
+                    GONetMain.InitializeAnimatorParameterSyncCache(support, this);
+                }
+            }
+        }
+
+        #endregion
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void OnGONetIdComponentChanged_UpdateAllComponents_IfAppropriate(bool isOwnerAuthorityIdKnownToBeGoodValueNow, uint gonetId_priorToChanges)
+        {
+            ushort ownerAuthorityId_new = ownerAuthorityId;
+
+            if (!isOwnerAuthorityIdKnownToBeGoodValueNow)
+            {
+                ushort ownerAuthorityId_asRepresentedInside_gonetId = (ushort)((gonetId << GONET_ID_BIT_COUNT_USED) >> GONET_ID_BIT_COUNT_USED);
+
+                if (ownerAuthorityId_asRepresentedInside_gonetId != GONetMain.OwnerAuthorityId_Unset && ownerAuthorityId_new != ownerAuthorityId_asRepresentedInside_gonetId)
+                {
+                    /* In games where this happens a lot, it appears in the log a lot and seems unhelpful/spammy:
+                    if (ownerAuthorityId_new != GONetMain.OwnerAuthorityId_Unset)
+                    {
+                        const string CHG = "OwnerAuthorityId changing from a non-unset value to a different non-unset value.  If this is happening due to a call to GONetMain.Server_AssumeAuthorityOver(GNP), then all is well; however, if not.....EXPLAIN yourself!  previous OwnerAuthorityId: ";
+                        const string NEW = " new OwnerAuthorityId: ";
+                        const string GNS = "<GONet server>";
+                        GONetLog.Info(string.Concat(CHG, ownerAuthorityId_new, NEW, ownerAuthorityId_asRepresentedInside_gonetId == GONetMain.OwnerAuthorityId_Server ? GNS : ownerAuthorityId_asRepresentedInside_gonetId.ToString()));
+                    }
+                    */
+
+                    // big ASSumption here, that if the gonetId contains a non-zero value for authority id and we have both (1) not represented that value inside ownerAuthorityId component and (2) ownerAuthorityId is unset....we are ASSuming gonetId composite contains the real/new value for ownerAuthorityId and we should use it!
+                    ownerAuthorityId_new = ownerAuthorityId_asRepresentedInside_gonetId;
+                }
+            }
+
+            uint gonetId_raw_priorToChanges = (gonetId_priorToChanges >> GONET_ID_BIT_COUNT_UNUSED);
+            uint gonetId_raw_new = (gonetId >> GONET_ID_BIT_COUNT_UNUSED);
+            uint gonetId_new = unchecked((uint)(gonetId_raw_new << GONET_ID_BIT_COUNT_UNUSED)) | ownerAuthorityId_new;
+
+            /* In games where this happens a lot, it appears in the log a lot and seems unhelpful/spammy:
+            if (gonetId_raw_priorToChanges != GONetIdRaw_Unset && gonetId_raw_new != gonetId_raw_priorToChanges)
+            {
+                const string CHG = "gonetId_raw changing from a non-unset value to a different non-unset value.  If this is happening due to a call to GONetMain.Server_AssumeAuthorityOver(GNP), then all is well; however, if not.....EXPLAIN yourself!  previous gonetId_raw: ";
+                const string NEW = " new gonetId_raw: ";
+                GONetLog.Info(string.Concat(CHG, gonetId_raw_priorToChanges, NEW, gonetId_raw_new));
+            }
+            */
+
+            if (GONetIdAtInstantiation == GONetId_Unset && gonetId_raw_new != GONetIdRaw_Unset && ownerAuthorityId_new != GONetMain.OwnerAuthorityId_Unset)
+            {
+                //GONetLog.Debug("GONetIdAtInstantiation = " + gonetId_new);
+
+                GONetIdAtInstantiation = gonetId_new;
+            }
+
+            GONetMain.OnGONetIdAboutToBeSet(gonetId_new, gonetId_raw_new, ownerAuthorityId_new, this);
+
+            ownerAuthorityId = ownerAuthorityId_new;
+            gonetId_raw = gonetId_raw_new;
+            gonetId = gonetId_new;
+        }
+
+        public uint gonetId_raw { get; private set; } = GONetIdRaw_Unset;
+        /// <summary>
+        /// This is the composite value of <see cref="gonetId_raw"/> and <see cref="ownerAuthorityId"/> smashed together into a single uint value
+        /// </summary>
+        private uint gonetId = GONetId_Unset;
+        /// <summary>
+        /// Every instance of <see cref="GONetParticipant"/> will be assigned a unique value to this variable.
+        /// IMPORTANT: This is the most important message to process first as data management in GONet relies on it.
+        /// </summary>
+        [GONetAutoMagicalSync(
+            GONetAutoMagicalSyncAttribute.PROFILE_TEMPLATE_NAME___EMPTY_USE_ATTRIBUTE_PROPERTIES_DIRECTLY,
+            SyncChangesEverySeconds = AutoMagicalSyncFrequencies.END_OF_FRAME_IN_WHICH_CHANGE_OCCURS_SECONDS, // important that this gets immediately communicated when it changes to avoid other changes related to this participant possibly getting processed before this required prerequisite assignment is made (i.e., other end will not be able to correlate the other changes to this participant if this has not been processed yet)
+            ProcessingPriority_GONetInternalOverride = int.MaxValue,
+            CustomSerialize_Type = typeof(GONetId_InitialAssignment_CustomSerializer),
+            MustRunOnUnityMainThread = true)]
+        public uint GONetId
+        {
+            get => gonetId;
+            internal set
+            {
+                uint gonetId_previous = gonetId;
+                gonetId = value;
+                OnGONetIdComponentChanged_UpdateAllComponents_IfAppropriate(false, gonetId_previous);
+            }
+        }
+
+        internal delegate void GNP_uint_Changed(GONetParticipant gonetParticipant);
+        private event GNP_uint_Changed gonetIdAtInstantiationChanged;
+
+        private bool anyUnhandledChanges_GONetIdAtInstantiationChanged;
+        internal void AddGONetIdAtInstantiationChangedHandler(GNP_uint_Changed handler)
+        {
+            gonetIdAtInstantiationChanged += handler;
+            if (anyUnhandledChanges_GONetIdAtInstantiationChanged)
+            {
+                anyUnhandledChanges_GONetIdAtInstantiationChanged = false;
+                handler(this);
+            }
+        }
+
+        /// <summary>
+        /// IMPORTANT: This is INTERNAL bud, so leave it alone!
+        /// </summary>
+        internal uint _GONetIdAtInstantiation;
+        public uint GONetIdAtInstantiation
+        { 
+            get => _GONetIdAtInstantiation; 
+            private set
+            { 
+                _GONetIdAtInstantiation = value; 
+                
+                if (gonetIdAtInstantiationChanged == null)
+                {
+                    anyUnhandledChanges_GONetIdAtInstantiationChanged = true;
+                }
+                else
+                {
+                    gonetIdAtInstantiationChanged.Invoke(this);
+                }
+            }
+        }
+
+        internal void SetGONetIdFromRemoteInstantiation(InstantiateGONetParticipantEvent instantiateEvent)
+        {
+            GONetId = instantiateEvent.GONetIdAtInstantiation;
+            GONetId = instantiateEvent.GONetId; // TODO when/if replay support is added, this might overwrite what will automatically be done in OnEnable_AssignGONetId_IfAppropriate...maybe that one should be prevented..going to comment there now too
+        }
+
+        [GONetAutoMagicalSync]
+        public bool IsPositionSyncd = false; // TODO Maybe change to PositionSyncStrategy, defaulting to 'Excluded' if more than 2 options required/wanted
+
+        [GONetAutoMagicalSync]
+        public bool IsRotationSyncd = false; // TODO Maybe change to RotationSyncStrategy, defaulting to 'Excluded' if more than 2 options required/wanted
+
+        public string DesignTimeLocation => GONetSpawnSupport_Runtime.GetDesignTimeMetadata_Location(this);
+
+        /// <summary>
+        /// PERFORMANCE: Cached result of IsInternallyConfigured (avoids 72-byte allocation per call from dictionary lookup).
+        /// Set to true once during metadata initialization; once true, never changes back to false.
+        /// </summary>
+        private bool _isInternallyConfigured_cached;
+
+        /// <summary>
+        /// Does this GNP have all the values set from design time operations in order to support this being allowed to be included in the game at runtime?
+        /// If not, an error will be logged in Awake() to alert you as to what needs to be done to resolve this.
+        /// PERFORMANCE: Returns cached value if already computed; avoids expensive dictionary lookup per call.
+        /// </summary>
+        public bool IsInternallyConfigured
+        {
+            get
+            {
+                if (_isInternallyConfigured_cached)
+                    return true; // Once configured, stays configured
+                
+                // Compute and cache if newly configured
+                bool isConfigured = !string.IsNullOrWhiteSpace(DesignTimeLocation) && CodeGenerationId != CodeGenerationId_Unset;
+                if (isConfigured)
+                    _isInternallyConfigured_cached = true;
+                
+                return isConfigured;
+            }
+        }
+
+        internal bool IsDesignTimeMetadataInitd { get; set; }
+
+        /// <summary>
+        /// <para>If false, the <see cref="GameObject"/> on which this is "installed" was defined in a scene.</para>
+        /// <para>If true, the <see cref="GameObject"/> on which this is "installed" was added to the game via a call to some flavor of <see cref="UnityEngine.Object.Instantiate(UnityEngine.Object)"/>.</para>
+        /// <para>IMPORTANT: This will have a value of true for EVERYTHING up until GONet knows for sure if it was defined in a scene or not!  If you need to be informed the moment this value is known to be false instead, register to the event <see cref="TODO FIXME add it here once available"/>.</para>
+        /// <para>REASONING: Returning true for things defined in scene.  Well, it will actually change to a value of false by the time the MonoBehaviour lifecycle method Start() is called.  This is due to the timing of Unity's SceneManager.sceneLoaded callback (see https://docs.unity3d.com/ScriptReference/SceneManagement.SceneManager-sceneLoaded.html).  It is called between OnEnable() and Start().  This callback is what GONet uses to keep track of what was defined in a scene (i.e., WasInstantiated = false) and what is in the game due to Object.Instantiate() having been called programmatically by code (i.e., WasInstantiated = true)</para>
+        /// </summary>
+        public bool WasInstantiated => wasInstantiatedForce || !GONetMain.WasDefinedInScene(this);
+        [SerializeField] internal bool wasInstantiatedForce;
+
+        /// <summary>
+        /// High-resolution timestamp (UtcNowTicks) when Awake() was called.
+        /// Used to distinguish scene-defined objects (created at scene load time) vs
+        /// runtime-spawned objects (created after scene is already loaded).
+        ///
+        /// PRECISION: Sub-millisecond on all platforms via HighResolutionTimeUtils.
+        /// MONOTONIC: Guaranteed never goes backwards (uses Stopwatch internally).
+        /// </summary>
+        internal long awakeTimeTicks = -1;
+
+        /// <summary>
+        /// Cached scene path captured at Awake (before any reparenting can change hierarchy).
+        /// Used to initialize design-time metadata for reparented scene objects.
+        /// </summary>
+        [NonSerialized] internal string fullUniquePathInSceneAtAwake = string.Empty;
+
+        /// <summary>
+        /// GONet elapsed ticks when Awake() was called.
+        /// Provides correlation with GONet time system for debugging.
+        /// </summary>
+        internal long awakeTimeElapsedTicks = -1;
+
+        ulong endOfLineSentTickCountWhenSet_isOKToStartAutoMagicalProcessing = ulong.MaxValue;
+        volatile bool isOKToStartAutoMagicalProcessing = false;
+        /// <summary>
+        /// <para>Before this is set to true, GONet does not know enough about this instance to allow processing of auto magical sync values.
+        /// The main reason behind this is how GONet uses core <see cref="MonoBehaviour"/> magic methods and other Unity methods/flows
+        /// (e.g. <see cref="UnityEngine.Object.Instantiate(UnityEngine.Object)"/>) to manage lifecycle here and GONet will not immediately
+        /// (i.e., upon instantiation or call to Awake) know if we need to or even can safely process/send any automagical sync.  GONet
+        /// auto propagate instantiation (across the network) stuff is really what necessitates this safety check.</para>
+        /// <para>WARNING: Setting this value is delayed by one frame to ensure the other threads reading from this are not executed too quickly and any bytes handed over to the reliable transport are processed first!</para>
+        /// </summary>
+        internal bool IsOKToStartAutoMagicalProcessing
+        {
+            get
+            {
+                bool flagSet = isOKToStartAutoMagicalProcessing;
+                bool tickConditionMet = endOfLineSentTickCountWhenSet_isOKToStartAutoMagicalProcessing <= GONetMain.tickCount_endOfTheLineSend_Thread;
+                bool result = flagSet && tickConditionMet;
+#if LOG_BLEND_DIAG
+                // Only log when flag is set but tick condition not yet met (the interesting case)
+                if (flagSet && !tickConditionMet)
+                {
+                    GONet.GONetLog.Debug($"[SYNC-GATE] IsOKToStartAutoMagicalProcessing=FALSE for GONetId={GONetId}: flagSet={flagSet}, tickConditionMet={tickConditionMet}, endOfLineTick={endOfLineSentTickCountWhenSet_isOKToStartAutoMagicalProcessing}, currentTick={GONetMain.tickCount_endOfTheLineSend_Thread}");
+                }
+#endif
+                return result;
+            }
+
+            set
+            {
+                isOKToStartAutoMagicalProcessing = value;
+
+                endOfLineSentTickCountWhenSet_isOKToStartAutoMagicalProcessing = value ? GONetMain.tickCount_endOfTheLineSend_Thread : uint.MaxValue;
+#if LOG_BLEND_DIAG
+                if (value)
+                {
+                    GONet.GONetLog.Debug($"[SYNC-GATE] IsOKToStartAutoMagicalProcessing SET to TRUE for GONetId={GONetId}: endOfLineTick={endOfLineSentTickCountWhenSet_isOKToStartAutoMagicalProcessing}, currentTick={GONetMain.tickCount_endOfTheLineSend_Thread}");
+                }
+#endif
+            }
+        }
+
+        internal bool DidStartMonitoringForAutoMagicalNetworking { get; set; }
+
+        /// <summary>
+        /// TODO: make the main dll internals visible to editor dll so this can be made internal again
+        /// </summary>
+        public delegate void GNPDelegate(GONetParticipant gonetParticipant);
+
+        /// <summary>
+        /// IMPORTANT: Do NOT use this.
+        /// TODO: make the main dll internals visible to editor dll so this can be made internal again
+        /// </summary>
+        public static event GNPDelegate DefaultConstructorCalled;
+        public GONetParticipant()
+        {
+            DefaultConstructorCalled?.Invoke(this);
+        }
+
+#if UNITY_EDITOR
+        private static bool isExitingPlayMode = false;
+        private static float timeSinceExitPlayMode = 0f;
+        private static float exitPlayModeDelay = 0.5f; // half-second delay after exiting play mode
+        public static bool isGenerating;
+
+        static GONetParticipant()
+        {
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+            EditorApplication.update += UpdateExitPlayModeState;
+        }
+
+        private static void OnPlayModeStateChanged(PlayModeStateChange stateChange)
+        {
+            if (stateChange == PlayModeStateChange.ExitingPlayMode)
+            {
+                isExitingPlayMode = true;
+            }
+            else if (stateChange == PlayModeStateChange.EnteredEditMode)
+            {
+                timeSinceExitPlayMode = 0f; // reset the time counter
+            }
+        }
+
+        private static void UpdateExitPlayModeState()
+        {
+            if (isExitingPlayMode)
+            {
+                timeSinceExitPlayMode += Time.deltaTime;
+                if (timeSinceExitPlayMode > exitPlayModeDelay)
+                {
+                    isExitingPlayMode = false; // delay has passed, safe to reset the flag
+                }
+            }
+        }
+#endif
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool DoesGONetIdContainAllComponents()
+        {
+            return gonetId_raw != GONetId_Unset && OwnerAuthorityId != GONetMain.OwnerAuthorityId_Unset;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool DoesGONetIdContainAllComponents(uint gonetId)
+        {
+            uint gonetId_raw = (gonetId >> GONET_ID_BIT_COUNT_UNUSED);
+            ushort ownerAuthorityId = (ushort)((gonetId << GONET_ID_BIT_COUNT_USED) >> GONET_ID_BIT_COUNT_USED);
+
+            return gonetId_raw != GONetId_Unset && ownerAuthorityId != GONetMain.OwnerAuthorityId_Unset;
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            // Conservative logging to understand OnValidate context
+            // Removed verbose debug logging that was spamming console
+
+            if (!EditorApplication.isPlaying &&
+                !EditorApplication.isPlayingOrWillChangePlaymode &&
+                 !isExitingPlayMode &&
+                 !isGenerating)
+            {
+                // Validation proceeding after guard conditions
+
+                // Check prefab context with detailed logging
+                bool isInPrefabPreview = IsInPrefabPreviewMode();
+                // Checked prefab preview mode
+
+                // Log scene information
+                var scene = gameObject?.scene;
+                if (scene.HasValue)
+                {
+                    // Scene context checked
+                }
+
+                // Log prefab information
+                if (gameObject != null)
+                {
+                    bool isPartOfAnyPrefab = UnityEditor.PrefabUtility.IsPartOfAnyPrefab(gameObject);
+                    var assetType = UnityEditor.PrefabUtility.GetPrefabAssetType(gameObject);
+                    string assetPath = UnityEditor.AssetDatabase.GetAssetPath(gameObject);
+
+                    // Prefab context checked
+                }
+
+                // Additional filtering: Only trigger OnValidateEditor if this appears to be a genuine user interaction
+                // Skip if we're currently in asset database operations or if the inspector isn't visible
+                bool isLikelyUserInteraction = IsLikelyUserInitiatedValidation();
+                // User interaction detection completed
+
+                if (isInPrefabPreview || isLikelyUserInteraction)
+                {
+                    // Triggering OnValidateEditor event
+                    // Trigger OnValidateEditor event for property change detection
+                    OnValidateEditor?.Invoke(this);
+                }
+                else
+                {
+                    // Skipping OnValidateEditor event (not user-initiated)
+                }
+            }
+            else
+            {
+                // OnValidate skipped due to guard conditions
+            }
+
+            /* option used in editor namespace code only....here for reference
+                         bool isHappeningDueToExitingPlayModeInEditor =
+                GONetParticipant_AutoMagicalSyncCompanion_Generated_Generator.LastPlayModeStateChange.HasValue &&
+                (GONetParticipant_AutoMagicalSyncCompanion_Generated_Generator.LastPlayModeStateChange == PlayModeStateChange.EnteredEditMode ||
+                    GONetParticipant_AutoMagicalSyncCompanion_Generated_Generator.LastPlayModeStateChange == PlayModeStateChange.ExitingPlayMode) &&
+                (GONetParticipant_AutoMagicalSyncCompanion_Generated_Generator.LastPlayModeStateChange_frameCount == Time.frameCount || // IMPORTANT: this is how we know it "just" changed from play to edit mode...otherwise we could never run the logic we want after exiting the play mode and we start messing around with the hierarchy
+                    Time.frameCount == 0);
+
+            if (!EditorApplication.isPlaying &&
+                !EditorApplication.isPlayingOrWillChangePlaymode &&
+                !isHappeningDueToExitingPlayModeInEditor &&
+                !isGenerating)
+            {
+                //GONetLog.Debug($"GONetParticipant was added or changed on GameObject: {gameObject.name} (Design-time only).");
+            }
+            */
+        }
+
+        /// <summary>
+        /// Attempts to determine if the current OnValidate call is likely due to user interaction
+        /// rather than internal Unity asset loading/scanning operations.
+        /// </summary>
+        private bool IsLikelyUserInitiatedValidation()
+        {
+            // Check if we're currently refreshing or importing assets
+            if (EditorApplication.isUpdating)
+            {
+                return false; // Asset database is updating
+            }
+
+            // Check if AssetDatabase is currently refreshing
+            if (UnityEditor.AssetDatabase.IsAssetImportWorkerProcess())
+            {
+                return false; // We're in an asset import worker process
+            }
+
+            // Check if we're in a prefab stage (double-click editing)
+            var currentPrefabStage = UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
+            if (currentPrefabStage != null)
+            {
+                // If we're in prefab stage mode, only count it as user interaction if this GameObject
+                // is actually part of the prefab being edited, not just loaded during asset scanning
+                try
+                {
+                    if (currentPrefabStage.IsPartOfPrefabContents(gameObject))
+                    {
+                        return true; // This GameObject is part of the prefab being edited
+                    }
+                    else
+                    {
+                        // This GameObject is NOT part of the prefab being edited - likely Unity's internal loading
+                        // during asset scanning while another prefab is open
+                        return false;
+                    }
+                }
+                catch (System.InvalidOperationException)
+                {
+                    // Can't check during Awake/OnEnable - be conservative
+                    return false;
+                }
+            }
+
+            // Use a simple heuristic: if the object is selected in the project or hierarchy,
+            // and we're not in the middle of a batch operation, it's likely user interaction
+            if (UnityEditor.Selection.activeGameObject == gameObject ||
+                UnityEditor.Selection.Contains(gameObject))
+            {
+                return true; // Object is currently selected - likely user interaction
+            }
+
+            // Check if this object's asset is selected in the project window
+            if (gameObject != null)
+            {
+                string assetPath = UnityEditor.AssetDatabase.GetAssetPath(gameObject);
+                if (!string.IsNullOrEmpty(assetPath))
+                {
+                    var assetObject = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
+                    if (UnityEditor.Selection.Contains(assetObject))
+                    {
+                        return true; // Asset is selected in project window
+                    }
+                }
+            }
+
+            // If none of the above conditions are met, it's likely an internal Unity operation
+            return false;
+        }
+
+        private bool IsInPrefabPreviewMode()
+        {
+            // IMPORTANT: Use the SAME logic as IsLikelyUserInitiatedValidation for consistency
+            // This prevents the regression loop where these two methods give conflicting results
+
+            // Check if we're in a prefab stage (double-click editing)
+            var currentPrefabStage = UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
+            if (currentPrefabStage != null)
+            {
+                // If we're in prefab stage mode, only count it as preview mode if this GameObject
+                // is actually part of the prefab being edited, not just loaded during asset scanning
+                try
+                {
+                    if (currentPrefabStage.IsPartOfPrefabContents(gameObject))
+                    {
+                        return true; // This GameObject is part of the prefab being edited
+                    }
+                    else
+                    {
+                        // This GameObject is NOT part of the prefab being edited - not preview mode
+                        return false;
+                    }
+                }
+                catch (System.InvalidOperationException)
+                {
+                    // Can't check during Awake/OnEnable - be conservative
+                    return false;
+                }
+            }
+
+            // Check if this is single-click inspector editing (no prefab stage active)
+            if (UnityEditor.PrefabUtility.IsPartOfAnyPrefab(gameObject))
+            {
+                // Check if the object is in an unloaded or temporary scene (scene path is null or empty)
+                if (!gameObject.scene.isLoaded && string.IsNullOrEmpty(gameObject.scene.path))
+                {
+                    // Additional check: confirm that there's a valid asset path for the nearest instance root
+                    string assetPath = UnityEditor.PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(gameObject);
+                    if (!string.IsNullOrEmpty(assetPath))
+                    {
+                        return true; // Confirmed to be in Prefab Preview Mode (single-click)
+                    }
+                }
+            }
+
+            return false; // Not in Prefab Preview Mode
+        }
+#endif
+
+        /// <summary>
+        /// NOTE: This will NOT be called when this was added to a GO on a prefab when in Prefab Preview (i.e., in-context editing) mode!
+        /// </summary>
+        public static event GNPDelegate OnAwakeEditor;
+
+        /// <summary>
+        /// Called when OnEnable is invoked in edit mode (design time).
+        /// Allows for detection of GONetParticipant enable/disable state changes during development.
+        /// </summary>
+        public static event GNPDelegate OnEnableEditor;
+
+        /// <summary>
+        /// Called when OnDisable is invoked in edit mode (design time).
+        /// Allows for detection of GONetParticipant enable/disable state changes during development.
+        /// </summary>
+        public static event GNPDelegate OnDisableEditor;
+
+        /// <summary>
+        /// Called when OnValidate is invoked in edit mode (design time).
+        /// Allows for detection of prefab asset property changes during Inspector editing.
+        /// </summary>
+        public static event GNPDelegate OnValidateEditor;
+
+        private void Awake()
+        {
+            if (Application.isPlaying)
+            {
+                // CRITICAL: Record timestamps FIRST thing in Awake (before any other processing)
+                // Use HighResolutionTimeUtils for sub-millisecond precision
+                awakeTimeTicks = HighResolutionTimeUtils.UtcNowTicks;
+                fullUniquePathInSceneAtAwake = DesignTimeMetadata.GetFullUniquePathInScene(this);
+
+                // Also record GONet elapsed time for correlation (if available)
+                if (GONetMain.Time != null)
+                {
+                    awakeTimeElapsedTicks = GONetMain.Time.ElapsedTicks;
+                }
+
+                // CRITICAL: Detect if this object was instantiated (not scene-defined) by checking if it was
+                // created during or after scene load. Scene-defined objects have wasInstantiatedForce = false
+                // by default, but objects created via Instantiate() need it set to true.
+                // This MUST happen before DesignTimeMetadata is initialized, as that check depends on this flag.
+                // Unity sets hideFlags to HideFlags.None for scene-defined objects, and leaves them unset
+                // (or sets other flags) for instantiated objects. However, this isn't reliable across platforms.
+                // Instead, we rely on the fact that scene-defined objects call Awake() during scene load,
+                // while runtime-instantiated objects call Awake() AFTER scene load (or during Awake of another object).
+                // The wasInstantiatedForce flag will be overridden to true during network spawn processing.
+                if (!wasInstantiatedForce)
+                {
+                    // Check if this is a prefab instance (not placed in scene)
+                    // Scene-defined objects have a scene reference during Awake, prefab instances are in the active scene
+                    // but were NOT placed in the scene by the designer (they were instantiated)
+                    // We'll detect this later once metadata is available - for now, keep default (false)
+                    // The timestamp-based WasInstantiated() check will handle this correctly
+                }
+
+                // EARLIEST LIFECYCLE POINT: Log with InstanceID for correlation (GONetId not yet available)
+                // InstanceID allows correlation between Awake → OnGONetReady events in log analysis
+                //GONetLog.Info($"[GONetParticipant] 🔵 Awake() START - InstanceID: {GetInstanceID()}, GameObject: {gameObject.name}");
+
+                var coroutineOwner = GONetMain.GlobalSessionContext_Participant;
+                if ((object)coroutineOwner != null && coroutineOwner != this)
+                {
+                    coroutineOwner.StartCoroutine(AwakeCoroutine());
+                }
+                else
+                {
+                    StartCoroutine(AwakeCoroutine());
+                }
+            }
+#if UNITY_EDITOR
+            else
+            {
+                OnAwakeEditor?.Invoke(this);
+            }
+#endif
+        }
+
+        private IEnumerator AwakeCoroutine()
+        {
+            //GONetLog.Debug($"dreetsi cikd wash");
+            yield return GONetMain.OnAwake_ApplyDesignTimeMetadata(this);
+
+            if (!this)
+            {
+                yield break;
+            }
+
+            if (!IsInternallyConfigured)
+            {
+                GONetLog.Error($"{nameof(GONetParticipant)} on {nameof(GameObject)} with name:'{name}' is required to have {nameof(DesignTimeLocation)} and {nameof(CodeGenerationId)} set to a valid value.  One/both are not.  Therefore, this will be disabled.  GONet will automatically set these values.  Please ensure the scene has been saved and a game build is created so all server/clients have the new/same information.  If for some reason, this message appears even after creating a new game build, please go to the GONet => GONet Editor Support menu/window and click on 'Refresh GONet code generation' and/or 'Fix GONet Generated Code', then once that completes re-run the game build and try again.  **DEBUG**: DesignTimeLocation='{DesignTimeLocation}', CodeGenerationId={CodeGenerationId}, IsDesignTimeMetadataInitd={IsDesignTimeMetadataInitd}");
+                enabled = false;
+            }
+
+            // LIFECYCLE GATE: Mark Awake complete and check if OnGONetReady can fire
+            didAwakeComplete = true;
+            GONetMain.CheckAndPublishOnGONetReady_IfAllConditionsMet(this);
+        }
+
+        /// <summary>
+        /// IMPORTANT: Do NOT use this.
+        /// TODO: make the main dll internals visible to editor dll so this can be made internal again
+        /// </summary>
+        public static event GNPDelegate ResetCalled;
+        private void Reset()
+        {
+            ResetCalled?.Invoke(this);
+        }
+
+        private void OnEnable()
+        {
+            GONetMain.OnEnable_StartMonitoringForAutoMagicalNetworking(this);
+
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                OnEnableEditor?.Invoke(this);
+            }
+#endif
+        }
+
+        struct RigidBodySettings
+        {
+            public bool isKinematic;
+            public bool useGravity;
+            public RigidbodyConstraints constraints;
+        }
+        public Rigidbody myRigidBody;
+        RigidBodySettings myRigidbodySettingsAtStart;
+
+        struct RigidBody2DSettings
+        {
+            public bool isKinematic;
+            public bool simulated;
+            public RigidbodyType2D bodyType;
+        }
+        public Rigidbody2D myRigidBody2D;
+        RigidBody2DSettings myRigidbody2DSettingsAtStart;
+
+        private void Start()
+        {
+            if (Application.isPlaying) // now that [ExecuteInEditMode] was added to GONetParticipant for OnDestroy, we have to guard this to only run in play
+            {
+                // DIAGNOSTIC: Log Start() for GONetLocal
+                if (GetComponent<GONetLocal>() != null && GONetConfig.LogSpawnDiagnostics)
+                {
+                    GONetLog.Debug($"[SPAWN-DIAG] GONetParticipant.Start() CALLED for GONetLocal - WasInstantiated: {WasInstantiated}, wasInstantiatedForce: {wasInstantiatedForce}, gonetId_raw: {gonetId_raw}, OwnerAuthorityId: {OwnerAuthorityId}");
+                }
+
+                if (!WasInstantiated) // NOTE: here in Start is the first point where we know the real/final value of WasInstantiated!
+                {
+                    IsOKToStartAutoMagicalProcessing = true;
+                }
+
+                GONetMain.Start_AutoPropagateInstantiation_IfAppropriate(this);
+
+                if ((myRigidBody = GetComponent<Rigidbody>()) != null)
+                {
+                    myRigidbodySettingsAtStart.isKinematic = myRigidBody.isKinematic;
+                    myRigidbodySettingsAtStart.useGravity = myRigidBody.useGravity;
+                    myRigidbodySettingsAtStart.constraints = myRigidBody.constraints;
+
+                    SetRigidBodySettingsConsideringOwner();
+                }
+
+                if ((myRigidBody2D = GetComponent<Rigidbody2D>()) != null)
+                {
+                    myRigidbody2DSettingsAtStart.isKinematic = myRigidBody2D.isKinematic;
+                    myRigidbody2DSettingsAtStart.simulated = myRigidBody2D.simulated;
+                    myRigidbody2DSettingsAtStart.bodyType = myRigidBody2D.bodyType;
+
+                    SetRigidBodySettingsConsideringOwner();
+                }
+
+                // LIFECYCLE GATE: Mark Start complete and check if OnGONetReady can fire
+                didStartComplete = true;
+                GONetMain.CheckAndPublishOnGONetReady_IfAllConditionsMet(this);
+
+                // REPARENTING: Capture original parent for ReparentGONetParticipantEvent self-cancel detection
+                CaptureOriginalParent();
+            }
+        }
+
+        /// <summary>
+        /// Captures the original parent info at spawn time for ReparentGONetParticipantEvent self-cancel detection.
+        /// Called once during Start().
+        /// </summary>
+        private void CaptureOriginalParent()
+        {
+            if (didCaptureOriginalParent) return;
+
+            Transform parent = transform.parent;
+            if (parent == null)
+            {
+                // World root
+                originalParentGONetId = GONetId_Unset;
+                originalParentFullUniquePath = string.Empty;
+                originalParentRelativePath = string.Empty;
+            }
+            else
+            {
+                GONetParticipant parentGNP = parent.GetComponent<GONetParticipant>();
+                if (parentGNP != null && parentGNP.GONetId != GONetId_Unset)
+                {
+                    // Parent is a GNP with valid GONetId
+                    originalParentGONetId = parentGNP.GONetId;
+                    originalParentFullUniquePath = string.Empty; // Not needed when GONetId is available
+                    originalParentRelativePath = string.Empty;
+                }
+                else
+                {
+                    GONetParticipant anchorGNP = parent.GetComponentInParent<GONetParticipant>();
+                    if (anchorGNP != null && anchorGNP.GONetId != GONetId_Unset)
+                    {
+                        string relativePath = Utils.HierarchyUtils.GetFullUniquePathRelativeTo(anchorGNP.gameObject, parent.gameObject);
+                        if (!string.IsNullOrEmpty(relativePath))
+                        {
+                            originalParentGONetId = anchorGNP.GONetId;
+                            originalParentRelativePath = relativePath;
+                        }
+                        else
+                        {
+                            originalParentGONetId = GONetId_Unset;
+                            originalParentRelativePath = string.Empty;
+                        }
+
+                        originalParentFullUniquePath = Utils.HierarchyUtils.GetFullUniquePath(parent.gameObject);
+                    }
+                    else
+                    {
+                        // Parent is non-GNP container or GNP without ID yet
+                        originalParentGONetId = GONetId_Unset;
+                        originalParentFullUniquePath = Utils.HierarchyUtils.GetFullUniquePath(parent.gameObject);
+                        originalParentRelativePath = string.Empty;
+                    }
+                }
+            }
+
+            didCaptureOriginalParent = true;
+
+            if (GONetConfig.LogReparentDiagnostics)
+            {
+                string parentDesc = originalParentGONetId != GONetId_Unset
+                    ? (string.IsNullOrEmpty(originalParentRelativePath)
+                        ? $"GNP:{originalParentGONetId}"
+                        : $"GNP:{originalParentGONetId} RelPath:{originalParentRelativePath}")
+                    : (string.IsNullOrEmpty(originalParentFullUniquePath) ? "WorldRoot" : $"Path:{originalParentFullUniquePath}");
+                GONetLog.Debug($"[REPARENT] Captured original parent for '{name}' (GONetId {GONetId}): {parentDesc}");
+            }
+        }
+
+        /// <summary>
+        /// Unity callback when transform's parent changes.
+        /// On authority: Creates and potentially publishes a ReparentGONetParticipantEvent.
+        /// On non-authority: Should be suppressed (suppressReparentEvent = true).
+        /// </summary>
+        private void OnTransformParentChanged()
+        {
+            if (!Application.isPlaying) return;
+            if (!didCaptureOriginalParent) return; // Too early in lifecycle
+            if (suppressReparentEvent) return; // Suppressed (remote apply or replay)
+            if (!IsMine) return; // Only authority publishes reparent events
+            if (GONetId == GONetId_Unset) return; // Not yet initialized
+
+            // Create the ReparentGONetParticipantEvent
+            Transform newParent = transform.parent;
+            uint newParentGONetId = GONetId_Unset;
+            string newParentPath = string.Empty;
+            string newParentRelativePath = string.Empty;
+
+            if (newParent == null)
+            {
+                // World root
+                newParentGONetId = GONetId_Unset;
+                newParentPath = string.Empty;
+                newParentRelativePath = string.Empty;
+            }
+            else
+            {
+                GONetParticipant parentGNP = newParent.GetComponent<GONetParticipant>();
+                if (parentGNP != null && parentGNP.GONetId != GONetId_Unset)
+                {
+                    newParentGONetId = parentGNP.GONetId;
+                    newParentPath = string.Empty;
+                    newParentRelativePath = string.Empty;
+                }
+                else
+                {
+                    GONetParticipant anchorGNP = newParent.GetComponentInParent<GONetParticipant>();
+                    if (anchorGNP != null && anchorGNP.GONetId != GONetId_Unset)
+                    {
+                        string relativePath = Utils.HierarchyUtils.GetFullUniquePathRelativeTo(anchorGNP.gameObject, newParent.gameObject);
+                        if (!string.IsNullOrEmpty(relativePath))
+                        {
+                            newParentGONetId = anchorGNP.GONetId;
+                            newParentRelativePath = relativePath;
+                        }
+                        else
+                        {
+                            newParentGONetId = GONetId_Unset;
+                            newParentRelativePath = string.Empty;
+                        }
+
+                        newParentPath = Utils.HierarchyUtils.GetFullUniquePath(newParent.gameObject);
+                        parentGNP = anchorGNP;
+                    }
+                    else
+                    {
+                        newParentGONetId = GONetId_Unset;
+                        newParentPath = Utils.HierarchyUtils.GetFullUniquePath(newParent.gameObject);
+                        newParentRelativePath = string.Empty;
+                    }
+                }
+
+                // Check if we need to suspend transform sync (nested GNP)
+                if (GONetConfig.EnableTransformSyncSuspensionForNestedGNPs && parentGNP != null)
+                {
+                    if (parentGNP.IsPositionSyncd || parentGNP.IsRotationSyncd)
+                    {
+                        SuspendTransformSync();
+                    }
+                }
+
+                // AUTHORITY-SIDE PHYSICS HANDLING: Disable physics when parenting to ANY parent
+                // This prevents physics from fighting with the reparent operation.
+                // Note: If SuspendTransformSync() was called above, it already handled physics.
+                // This handles the case where parent is not a synced GNP but we still need physics disabled.
+                if (GONetConfig.AutoKinematicOnTransformSyncSuspension && myRigidBody != null && !hasReparentPhysicsStateSaved)
+                {
+                    // Save original state BEFORE modifying
+                    suspendedRigidbodyWasKinematic = myRigidBody.isKinematic;
+                    suspendedRigidbodyWasUseGravity = myRigidBody.useGravity;
+                    hasReparentPhysicsStateSaved = true;
+
+                    // Disable physics completely
+                    // IMPORTANT: Zero velocities BEFORE setting kinematic (Unity doesn't allow setting velocity on kinematic bodies)
+                    if (!myRigidBody.isKinematic)
+                    {
+#if UNITY_6000_0_OR_NEWER
+                        myRigidBody.linearVelocity = Vector3.zero;
+#else
+                        myRigidBody.velocity = Vector3.zero;
+#endif
+                        myRigidBody.angularVelocity = Vector3.zero;
+                        myRigidBody.isKinematic = true;
+                    }
+                    myRigidBody.useGravity = false;
+
+                    if (GONetConfig.LogReparentDiagnostics)
+                    {
+                        GONetLog.Debug($"[REPARENT] Authority-side physics DISABLED for '{name}' (GONetId {GONetId}) - " +
+                                      $"was: Kinematic={suspendedRigidbodyWasKinematic}, UseGravity={suspendedRigidbodyWasUseGravity}");
+                    }
+                }
+            }
+
+            // DETACH FIX (Jan 2026): Capture suspension state BEFORE resuming.
+            // If we were suspended (parented to a synced GNP), we should NOT self-cancel
+            // even if we're returning to world root (which may be our spawn-time parent).
+            bool wasSuspendedDueToParenting = isTransformSyncSuspendedDueToParenting;
+
+            // If unparented and was suspended, resume transform sync
+            if (newParent == null && isTransformSyncSuspendedDueToParenting)
+            {
+                ResumeTransformSync();
+            }
+
+            // AUTHORITY-SIDE PHYSICS RESTORATION: Restore physics when detaching from parent
+            // This handles the case where parent was not a synced GNP (so ResumeTransformSync wasn't called)
+            // but we still need to restore physics state.
+            if (newParent == null && hasReparentPhysicsStateSaved && !isTransformSyncSuspendedDueToParenting)
+            {
+                if (GONetConfig.AutoKinematicOnTransformSyncSuspension && myRigidBody != null)
+                {
+                    myRigidBody.isKinematic = suspendedRigidbodyWasKinematic;
+                    myRigidBody.useGravity = suspendedRigidbodyWasUseGravity;
+
+                    if (GONetConfig.LogReparentDiagnostics)
+                    {
+                        GONetLog.Debug($"[REPARENT] Authority-side physics RESTORED for '{name}' (GONetId {GONetId}) - " +
+                                      $"Kinematic={suspendedRigidbodyWasKinematic}, UseGravity={suspendedRigidbodyWasUseGravity}");
+                    }
+                }
+                hasReparentPhysicsStateSaved = false;
+            }
+
+            // Create the event (but don't publish yet - allow FinalizeReparentOffset())
+            pendingReparentEvent = new ReparentGONetParticipantEvent(
+                GONetId,
+                OwnerAuthorityId,
+                originalParentGONetId,
+                originalParentFullUniquePath,
+                originalParentRelativePath,
+                newParentGONetId,
+                newParentPath,
+                newParentRelativePath,
+                transform.localPosition,
+                transform.localRotation,
+                GONetMain.Time.ElapsedTicks
+            );
+            pendingReparentEventFrameCreated = Time.frameCount;
+
+            // Check for self-cancel
+            // DETACH FIX (Jan 2026): Don't self-cancel if we were suspended (legitimately parented to a synced GNP).
+            // The self-cancel logic is designed to prevent duplicate events when an object bounces back to its
+            // spawn-time parent without any intermediate reparenting. But if we were suspended, we WERE parented
+            // to something else (a synced GNP), so this detach is a real operation that clients need to receive.
+            if (pendingReparentEvent.ShouldSelfCancel)
+            {
+                if (wasSuspendedDueToParenting)
+                {
+                    // DETACH FIX: Skip self-cancel because we were legitimately parented
+                    if (GONetConfig.LogReparentDiagnostics)
+                    {
+                        GONetLog.Debug($"[REPARENT] Skipping self-cancel for '{name}' (GONetId {GONetId}) - was suspended, detach must propagate");
+                    }
+                }
+                else
+                {
+                    if (GONetConfig.LogReparentDiagnostics)
+                    {
+                        GONetLog.Debug($"[REPARENT] Self-cancel: '{name}' (GONetId {GONetId}) returned to original parent");
+                    }
+                    pendingReparentEvent = null;
+                    pendingReparentEventFrameCreated = -1;
+
+                    // Notify GONet to remove any persisted reparent event for this object
+                    GONetMain.OnReparentSelfCancel(this);
+                    return;
+                }
+            }
+
+            if (GONetConfig.LogReparentDiagnostics)
+            {
+                GONetLog.Debug($"[REPARENT] Pending event created for '{name}' (GONetId {GONetId}): {pendingReparentEvent}");
+            }
+
+            // Auto-publish will happen in GONetMain.Update() after ReparentAutoPublishDelayFrames
+            // Or gameplay code can call FinalizeReparentOffset() to publish immediately
+        }
+
+        /// <summary>
+        /// Finalizes the pending reparent event with optional custom local offsets and publishes it.
+        /// Call this from gameplay code after reparenting if you want custom offsets.
+        /// If not called, the event auto-publishes with current localPosition/localRotation after delay.
+        /// </summary>
+        /// <param name="localPosition">Optional custom local position. If null, uses current transform.localPosition.</param>
+        /// <param name="localRotation">Optional custom local rotation. If null, uses current transform.localRotation.</param>
+        public void FinalizeReparentOffset(Vector3? localPosition = null, Quaternion? localRotation = null)
+        {
+            if (pendingReparentEvent == null)
+            {
+                GONetLog.Warning($"[REPARENT] FinalizeReparentOffset called on '{name}' but no pending reparent event exists");
+                return;
+            }
+
+            // Update offsets if provided
+            if (localPosition.HasValue)
+            {
+                pendingReparentEvent.LocalPositionOffset = localPosition.Value;
+            }
+            else
+            {
+                pendingReparentEvent.LocalPositionOffset = transform.localPosition;
+            }
+
+            if (localRotation.HasValue)
+            {
+                pendingReparentEvent.LocalRotationOffset = localRotation.Value;
+            }
+            else
+            {
+                pendingReparentEvent.LocalRotationOffset = transform.localRotation;
+            }
+
+            // Publish the event
+            GONetMain.EventBus.Publish(pendingReparentEvent);
+
+            if (GONetConfig.LogReparentDiagnostics)
+            {
+                GONetLog.Debug($"[REPARENT] Published (finalized) event for '{name}' (GONetId {GONetId}): {pendingReparentEvent}");
+            }
+
+            // Clear pending state
+            pendingReparentEvent = null;
+            pendingReparentEventFrameCreated = -1;
+        }
+
+        /// <summary>
+        /// Called by GONetMain to auto-publish pending reparent events after delay.
+        /// </summary>
+        internal void AutoPublishPendingReparentIfNeeded()
+        {
+            if (pendingReparentEvent == null) return;
+
+            int framesSincePending = Time.frameCount - pendingReparentEventFrameCreated;
+            if (framesSincePending >= GONetConfig.ReparentAutoPublishDelayFrames)
+            {
+                // Update with current transform values before publishing
+                pendingReparentEvent.LocalPositionOffset = transform.localPosition;
+                pendingReparentEvent.LocalRotationOffset = transform.localRotation;
+
+                // Publish the event
+                GONetMain.EventBus.Publish(pendingReparentEvent);
+
+                if (GONetConfig.LogReparentDiagnostics)
+                {
+                    GONetLog.Debug($"[REPARENT] Auto-published event for '{name}' (GONetId {GONetId}): {pendingReparentEvent}");
+                }
+
+                // Clear pending state
+                pendingReparentEvent = null;
+                pendingReparentEventFrameCreated = -1;
+            }
+        }
+
+        /// <summary>
+        /// PRE: <see cref="IsRigidBodyOwnerOnlyControlled"/> is known to be true and <see cref="myRigidBody"/> is not null; otherwise this method call will have NO effect.
+        /// Call this in Start() and any time <see cref="OwnerAuthorityId"/> changes.
+        /// </summary>
+        internal void SetRigidBodySettingsConsideringOwner()
+        {
+            if (IsRigidBodyOwnerOnlyControlled)
+            {
+                if (myRigidBody != null)
+            {
+                if (IsMine)
+                {
+                    // CRITICAL FIX (Jan 2026): Don't "restore" physics settings if Start() hasn't captured them yet!
+                    // Before didStartComplete, myRigidbodySettingsAtStart contains default values (useGravity=false, constraints=None).
+                    // Restoring these defaults corrupts the rigidbody settings from the prefab.
+                    // The prefab's rigidbody is already correct at spawn time, so just leave it alone until Start() captures the real values.
+                    if (!didStartComplete)
+                    {
+                        return; // Leave rigidbody as-is from prefab
+                    }
+
+                    myRigidBody.isKinematic = myRigidbodySettingsAtStart.isKinematic;
+                    myRigidBody.useGravity = myRigidbodySettingsAtStart.useGravity;
+                    // CRITICAL FIX (Dec 2025): Restore original constraints when becoming owner.
+                    // After voluntary handoff, the new host must honor the original physics constraints
+                    // (e.g., freeze position X) that were set by the designer. Without this, constraints
+                    // cleared during non-ownership won't be restored, causing physics to behave incorrectly.
+                    myRigidBody.constraints = myRigidbodySettingsAtStart.constraints;
+                }
+                else
+                {
+                    myRigidBody.isKinematic = true;
+                    myRigidBody.useGravity = false;
+
+                    // DISABLE Unity's Rigidbody interpolation on clients (GONet's value blending handles smoothing)
+                    // Using Unity's interpolation creates double interpolation conflict with GONet's value blending,
+                    // causing stuttering/jittery motion. GONet's value blending already provides smooth interpolation
+                    // between network updates (50Hz), so Unity's interpolation is redundant and conflicts.
+                    myRigidBody.interpolation = RigidbodyInterpolation.None;
+
+                    // Clear constraints when becoming kinematic on non-authority clients
+                    // Rationale: Constraints are for physics simulation only. Since kinematic rigidbodies
+                    // are manually positioned (not physics-driven), constraints shouldn't apply.
+                    // If Unity enforces constraints on kinematic RBs (potential quirk), this prevents
+                    // them from blocking GONet's value blending system from applying synced positions.
+                    if (myRigidBody.constraints != RigidbodyConstraints.None)
+                    {
+                        //GONetLog.Warning($"[GONetParticipant] Clearing Rigidbody constraints on non-authority '{name}' (GONetId: {GONetId}) - was: {myRigidBody.constraints}");
+                        myRigidBody.constraints = RigidbodyConstraints.None;
+                    }
+
+                    // DIAGNOSTIC: Log AFTER changes
+                    //GONetLog.Warning($"[GONetParticipant][DIAGNOSTIC] AFTER kinematic change - '{name}' (GONetId: {GONetId}) isKinematic={myRigidBody.isKinematic}, useGravity={myRigidBody.useGravity}, constraints={myRigidBody.constraints}");
+                    }
+                }
+
+                if (myRigidBody2D != null)
+                {
+                    if (IsMine)
+                    {
+                        // CRITICAL FIX (Jan 2026): Same guard as Rigidbody - don't restore before Start() captures the real values
+                        if (!didStartComplete)
+                        {
+                            return; // Leave rigidbody2D as-is from prefab
+                        }
+
+                        myRigidBody2D.bodyType = myRigidbody2DSettingsAtStart.bodyType;
+                        myRigidBody2D.isKinematic = myRigidbody2DSettingsAtStart.isKinematic;
+                        myRigidBody2D.simulated = myRigidbody2DSettingsAtStart.simulated;
+                    }
+                    else
+                    {
+                        myRigidBody2D.bodyType = RigidbodyType2D.Kinematic;
+                        myRigidBody2D.isKinematic = true;
+                        myRigidBody2D.simulated = false;
+
+                        // DISABLE Unity's Rigidbody2D interpolation on clients (GONet's value blending handles smoothing)
+                        // Using Unity's interpolation creates double interpolation conflict with GONet's value blending,
+                        // causing stuttering/jittery motion. GONet's value blending already provides smooth interpolation
+                        // between network updates (50Hz), so Unity's interpolation is redundant and conflicts.
+                        myRigidBody2D.interpolation = RigidbodyInterpolation2D.None;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Temporarily enables physics to "snap" object to precise resting position when at-rest message received.
+        /// Eliminates quantization error (position: ~0.95mm, rotation: ~0.3°) by leveraging Unity's sub-millimeter
+        /// collision resolution and sub-0.01° rotation alignment.
+        /// PRE: <see cref="IsRigidBodyOwnerOnlyControlled"/> is true and <see cref="myRigidBody"/> is not null.
+        /// </summary>
+        private IEnumerator PhysicsSnapToRest_Coroutine(Vector3 quantizedPosition, Quaternion quantizedRotation)
+        {
+            if (!IsRigidBodyOwnerOnlyControlled || myRigidBody == null)
+            {
+                yield break;
+            }
+
+            // Step 1: Save original physics state
+            bool wasKinematic = myRigidBody.isKinematic;
+            bool wasUseGravity = myRigidBody.useGravity;
+
+            // Step 2: Temporarily enable physics (BOTH kinematic and gravity must be set correctly)
+            myRigidBody.isKinematic = false; // MUST be done BEFORE setting velocities!
+            myRigidBody.useGravity = true;   // Enable gravity so physics can resolve properly
+
+            // Step 3: Move to quantized position/rotation (within ~0.95mm and ~0.3° of true rest)
+            // and zero out velocities
+            myRigidBody.position = quantizedPosition;
+            myRigidBody.rotation = quantizedRotation;
+#if UNITY_6000_0_OR_NEWER
+            myRigidBody.linearVelocity = Vector3.zero;
+#else
+            myRigidBody.velocity = Vector3.zero;
+#endif
+            myRigidBody.angularVelocity = Vector3.zero;
+
+            // Step 4: Wait for physics resolution (collision detection + rotation alignment via friction/torque)
+            yield return new WaitForFixedUpdate();
+
+            // Step 5: Re-freeze object with physics-resolved position AND rotation
+#if UNITY_6000_0_OR_NEWER
+            myRigidBody.linearVelocity = Vector3.zero;
+#else
+            myRigidBody.velocity = Vector3.zero;
+#endif
+            myRigidBody.angularVelocity = Vector3.zero;
+            myRigidBody.useGravity = wasUseGravity;  // Restore original gravity setting
+            myRigidBody.isKinematic = wasKinematic;  // Restore kinematic state AFTER clearing velocities
+
+            // Result: Object now at sub-millimeter position and sub-0.01° rotation precision
+            // Physics resolver has corrected quantization error through collision detection and contact normal alignment
+        }
+
+        /// <summary>
+        /// Public entry point for physics snapping at rest. Called from GONet.cs at-rest handling.
+        /// Only applies to physics objects on non-authority clients.
+        /// Achieves 15-bit rotation quality at 9-bit bandwidth cost (0.3° quantized → sub-0.01° effective).
+        /// </summary>
+        internal void TriggerPhysicsSnapToRest(Vector3 quantizedPosition, Quaternion quantizedRotation)
+        {
+            // since this will happen in coroutine, need to check if recently destroyed (i.e., now null) 
+            if (this == null || gameObject == null) return;
+
+            // TOGGLE: Check if experimental physics snapping is enabled in ANY position/rotation sync profile (default: false as of Oct 2025)
+            // Stage 2 smart at-rest value selection is now the preferred approach
+            bool enabledInAnyProfile = false;
+
+            var syncCompanion = GONetMain.GetSyncCompanionByGNP(this);
+            if (syncCompanion != null && syncCompanion.valuesChangesSupport != null)
+            {
+                // Scan all synced values to find position/rotation with physics snapping enabled
+                for (byte i = 0; i < syncCompanion.valuesChangesSupport.Length; i++)
+                {
+                    var valueChangeSupport = syncCompanion.valuesChangesSupport[i];
+
+                    // Defensive null check (can be null during teardown/cleanup)
+                    if (valueChangeSupport == null)
+                    {
+                        continue;
+                    }
+
+                    // Check if this is position or rotation by function pointer comparison
+                    // (matches pattern from GONet.cs physics snapping trigger code)
+                    bool isPosition = valueChangeSupport.syncAttribute_ShouldSkipSync == GONetMain.IsPositionNotSyncd;
+                    bool isRotation = valueChangeSupport.syncAttribute_ShouldSkipSync == GONetMain.IsRotationNotSyncd;
+
+                    if ((isPosition || isRotation) && valueChangeSupport.syncAttribute_EnablePhysicsSnapping)
+                    {
+                        enabledInAnyProfile = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!enabledInAnyProfile)
+            {
+                return; // Feature disabled (not enabled in any position/rotation profile)
+            }
+
+            if (IsRigidBodyOwnerOnlyControlled && myRigidBody != null && !IsMine)
+            {
+                // Start the physics snapping coroutine
+                // Note: This will automatically stop any previous physics snap coroutine for this participant
+                StartCoroutine(PhysicsSnapToRest_Coroutine(quantizedPosition, quantizedRotation));
+            }
+        }
+
+        private void OnDisable()
+        {
+            GONetMain.OnDisable_StopMonitoringForAutoMagicalNetworking(this);
+
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                OnDisableEditor?.Invoke(this);
+            }
+#endif
+        }
+
+        /// <summary>
+        /// IMPORTANT: Do NOT use this.
+        /// TODO: make the main dll internals visible to editor dll so this can be made internal again
+        /// NOTE: This will NOT be called when this was added to a GO on a prefab when in Prefab Preview (i.e., in-context editing) mode!
+        /// </summary>
+        public static event GNPDelegate OnDestroyCalled;
+        private void OnDestroy()
+        {
+            GONetMain.OnDestroy_AutoPropagateRemoval_IfAppropriate(this);
+            OnDestroyCalled?.Invoke(this);
+        }
+
+        public class GONetId_InitialAssignment_CustomSerializer : IGONetAutoMagicalSync_CustomSerializer
+        {
+            internal static GONetId_InitialAssignment_CustomSerializer Instance => GONetAutoMagicalSyncAttribute.GetCustomSerializer<GONetId_InitialAssignment_CustomSerializer>();
+
+            /// <summary>
+            /// This is needed for <see cref="Activator.CreateInstance(Type)"/> in <see cref="GONetAutoMagicalSyncAttribute"/> method to be able to instantiate this.
+            /// </summary>
+            public GONetId_InitialAssignment_CustomSerializer() { }
+
+            public GONetSyncableValue Deserialize(Utils.BitByBitByteArrayBuilder bitStream_readFrom)
+            {
+                GONetParticipant gonetParticipant = null;
+
+                bool isOwnershipChange;
+                bitStream_readFrom.ReadBit(out isOwnershipChange);
+                if (isOwnershipChange)
+                {
+                    uint gonetIdAtInstantiation = GONetId_Unset;
+                    bitStream_readFrom.ReadUInt(out gonetIdAtInstantiation);
+
+                    gonetParticipant = GONetMain.GetGONetParticipantById(gonetIdAtInstantiation);
+                }
+                else
+                {
+                    bool wasDefinedInScene;
+                    bitStream_readFrom.ReadBit(out wasDefinedInScene);
+                    if (wasDefinedInScene)
+                    {
+                        // FIX (Jan 2026): Use DesignTimeLocation instead of HierarchyUtils.GetFullUniquePath
+                        // DesignTimeLocation is IMMUTABLE (captured at design time) and survives reparenting.
+                        // HierarchyUtils path changes if object is reparented, causing deserialization failures.
+                        string designTimeLocation;
+                        bitStream_readFrom.ReadString(out designTimeLocation);
+
+                        // Find the participant by matching DesignTimeLocation against all scene objects
+                        gonetParticipant = FindGONetParticipantByDesignTimeLocation(designTimeLocation);
+
+                        if (gonetParticipant == null)
+                        {
+                            // Fallback: Try the old hierarchy path approach for backwards compatibility
+                            // This handles edge cases where DesignTimeLocation might not be set correctly
+                            GameObject gnpGO = HierarchyUtils.FindByFullUniquePath(designTimeLocation);
+                            if (gnpGO != null)
+                            {
+                                gonetParticipant = gnpGO.GetComponent<GONetParticipant>();
+                            }
+                        }
+                    }
+                    // else gonetParticipant will be null and the gonetId will be read below and then nothing else done as there is nothing else to do here
+                }
+
+                uint gonetId = GONetId_Unset;
+                bitStream_readFrom.ReadUInt(out gonetId); // should we order change list by this id ascending and just put diff from last value?
+
+                if ((object)gonetParticipant != null)
+                {
+                    //GONetLog.Debug("************ initial assignment of id......what is the value prior to assignment?  authority_id: " + gonetParticipant.OwnerAuthorityId + " raw: " + gonetParticipant.gonetId_raw + " full: " + gonetParticipant.GONetId + "..........newly assigned: " + gonetId);
+
+                    gonetParticipant.GONetId = gonetId;
+
+                    // FIX (December 2025): Register scene objects in SoA IMMEDIATELY after GONetId assignment.
+                    // Problem: OnGONetReady may not fire yet because IsGONetReady() returns false when
+                    // GONetLocal.LookupByAuthorityId[OwnerAuthorityId] is null (server's GONetLocal not yet received).
+                    // This causes scene objects to never be registered in SoA, so sync data is dropped (dataIns=0).
+                    if (!gonetParticipant.IsMine && !gonetParticipant.v2_isRegisteredInSoA)
+                    {
+                        GONetMain.RegisterObjectInSoA(gonetParticipant);
+                        GONetLog.Info($"[SoA-SCENE-REG] Registered scene object '{gonetParticipant.name}' (GONetId {gonetParticipant.GONetId}, IsMine={gonetParticipant.IsMine}) in SoA at GONetId_InitialAssignment_CustomSerializer");
+                    }
+                }
+
+                return gonetId;
+            }
+
+            public void Serialize(Utils.BitByBitByteArrayBuilder bitStream_appendTo, GONetParticipant gonetParticipant, GONetSyncableValue value)
+            {
+                bool isOwnershipChange = gonetParticipant.GONetIdAtInstantiation != value.System_UInt32; // IMPORTANT: this is only good logic when the server assumes ownership over client....and no other ownership changes after that will register here
+                bitStream_appendTo.WriteBit(isOwnershipChange);
+
+                if (isOwnershipChange)
+                {
+                    bitStream_appendTo.WriteUInt(gonetParticipant.GONetIdAtInstantiation);
+                }
+                else
+                {
+                    bool wasDefinedInScene = GONetMain.WasDefinedInScene(gonetParticipant);
+                    bitStream_appendTo.WriteBit(wasDefinedInScene);
+                    if (wasDefinedInScene)
+                    {
+                        // FIX (Jan 2026): Use DesignTimeLocation instead of HierarchyUtils.GetFullUniquePath
+                        // DesignTimeLocation is IMMUTABLE (captured at design time) and survives reparenting.
+                        // HierarchyUtils path changes if object is reparented, causing deserialization failures.
+                        string designTimeLocation = gonetParticipant.DesignTimeLocation;
+                        bitStream_appendTo.WriteString(designTimeLocation);
+                    }
+                }
+
+                uint gonetId = value.System_UInt32;
+                bitStream_appendTo.WriteUInt(gonetId);
+            }
+
+            /// <summary>
+            /// Finds a GONetParticipant by its DesignTimeLocation.
+            /// Used for identifying scene-defined objects that may have been reparented.
+            /// </summary>
+            /// <param name="designTimeLocation">The DesignTimeLocation to search for (e.g., "scene://SceneName/ObjectPath")</param>
+            /// <returns>The GONetParticipant with matching DesignTimeLocation, or null if not found.</returns>
+            private static GONetParticipant FindGONetParticipantByDesignTimeLocation(string designTimeLocation)
+            {
+                if (string.IsNullOrWhiteSpace(designTimeLocation))
+                    return null;
+
+                // Search all registered GONetParticipants for matching DesignTimeLocation
+                foreach (var gnp in GONetMain.GetAllGONetParticipants())
+                {
+                    if (gnp != null &&
+                        (gnp.DesignTimeLocation == designTimeLocation ||
+                         (!string.IsNullOrEmpty(gnp.fullUniquePathInSceneAtAwake) && gnp.fullUniquePathInSceneAtAwake == designTimeLocation)))
+                    {
+                        return gnp;
+                    }
+                }
+
+                // Also search scene objects that haven't been registered yet (before Start)
+                GONetParticipant[] sceneParticipants = UnityEngine.Object.FindObjectsOfType<GONetParticipant>(true);
+                foreach (var gnp in sceneParticipants)
+                {
+                    if (gnp != null &&
+                        (gnp.DesignTimeLocation == designTimeLocation ||
+                         (!string.IsNullOrEmpty(gnp.fullUniquePathInSceneAtAwake) && gnp.fullUniquePathInSceneAtAwake == designTimeLocation)))
+                    {
+                        return gnp;
+                    }
+                }
+
+                return null;
+            }
+
+            public void InitQuantizationSettings(byte quantizeDownToBitCount, float quantizeLowerBound, float quantizeUpperBound)
+            {
+                // do nothing!  TODO consider supporting quantizing even this, but not making sense right now and still want to keep this interface/API
+            }
+
+            public bool AreEqualConsideringQuantization(GONetSyncableValue valueA, GONetSyncableValue valueB)
+            {
+                return valueA.System_UInt32 == valueB.System_UInt32;
+            }
+        }
+    }
+}

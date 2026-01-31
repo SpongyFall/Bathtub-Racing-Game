@@ -1,0 +1,15 @@
+#!/bin/bash
+# GONet Network Simulation - Custom Settings
+# Edit the values below to create your own network conditions
+# Auto-detect determines if this instance is server or client
+# Rename to .sh, chmod +x, and change ./GONetSandbox to your game name
+#
+# IMPORTANT: Network simulation only works in DEVELOPMENT BUILDS or the Unity Editor!
+#            These arguments are ignored in Release builds (compiled out for zero overhead).
+
+# Configuration (edit these values):
+LATENCY=75
+JITTER=25
+LOSS=3
+
+./GONetSandbox -netsim -latency $LATENCY -jitter $JITTER -loss $LOSS &

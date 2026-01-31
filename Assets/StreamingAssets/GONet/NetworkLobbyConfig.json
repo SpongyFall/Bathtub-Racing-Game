@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GONet Network Lobby Configuration",
+  "description": "Configures which advanced settings are exposed in the connection wizard UI. Add/remove fields here to customize the UI without modifying code.",
+  "version": "1.0.0",
+
+  "advancedFields": [
+    {
+      "fieldName": "maxConnections",
+      "label": "Max Connections",
+      "type": "int",
+      "default": 16,
+      "min": 1,
+      "max": 100,
+      "tooltip": "Maximum number of simultaneous client connections (Server/Host only)",
+      "visibleFor": ["Host", "DedicatedServer"]
+    },
+    {
+      "fieldName": "gonetIdBatchSize",
+      "label": "GONetId Batch Size",
+      "type": "int",
+      "default": 200,
+      "min": 100,
+      "max": 1000,
+      "tooltip": "Pre-allocated GONetId ranges for client spawning. Higher values (500-1000) for rapid spawn scenarios, lower (100-200) for typical gameplay.",
+      "visibleFor": ["Host", "Client", "DedicatedServer"]
+    },
+    {
+      "fieldName": "networkSendRate",
+      "label": "Send Rate (Hz)",
+      "type": "int",
+      "default": 60,
+      "min": 10,
+      "max": 120,
+      "tooltip": "Network updates per second. Higher = smoother but more bandwidth. 60Hz is recommended for most games.",
+      "visibleFor": ["Host", "DedicatedServer"]
+    }
+  ],
+
+  "presetDefaults": [
+    {
+      "presetName": "Local Test",
+      "description": "Quick local testing (Server + 1 Client on same machine)",
+      "role": "Host",
+      "ipAddress": "127.0.0.1",
+      "port": 7777,
+      "playerName": "LocalPlayer",
+      "maxConnections": 4,
+      "gonetIdBatchSize": 200,
+      "networkSendRate": 60,
+      "autoConnect": false
+    },
+    {
+      "presetName": "4-Player Test",
+      "description": "Multi-player local testing (Server + 4 Clients)",
+      "role": "Host",
+      "ipAddress": "127.0.0.1",
+      "port": 7777,
+      "playerName": "Player1",
+      "maxConnections": 4,
+      "gonetIdBatchSize": 200,
+      "networkSendRate": 60,
+      "autoConnect": false
+    },
+    {
+      "presetName": "Dedicated Server",
+      "description": "Production dedicated server configuration",
+      "role": "DedicatedServer",
+      "ipAddress": "",
+      "port": 7777,
+      "playerName": "",
+      "maxConnections": 32,
+      "gonetIdBatchSize": 500,
+      "networkSendRate": 60,
+      "autoConnect": true
+    },
+    {
+      "presetName": "Quick Client",
+      "description": "Fast client connection to localhost",
+      "role": "Client",
+      "ipAddress": "127.0.0.1",
+      "port": 7777,
+      "playerName": "Player",
+      "maxConnections": 16,
+      "gonetIdBatchSize": 200,
+      "networkSendRate": 60,
+      "autoConnect": false
+    }
+  ],
+
+  "ui": {
+    "showLANDiscovery": true,
+    "showAdvancedToggle": true,
+    "showPresetSelector": true,
+    "defaultRole": "Host",
+    "defaultPort": 7777,
+    "defaultIP": "127.0.0.1",
+    "lanDiscoveryPort": 7778,
+    "lanDiscoveryInterval": 1.0
+  },
+
+  "validation": {
+    "requirePlayerName": false,
+    "allowEmptyIP": false,
+    "minPort": 1024,
+    "maxPort": 65535
+  }
+}

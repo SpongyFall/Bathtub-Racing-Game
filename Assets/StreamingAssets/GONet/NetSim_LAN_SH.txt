@@ -1,0 +1,10 @@
+#!/bin/bash
+# GONet Network Simulation - LAN Preset
+# Simulates: 2ms latency, 1ms jitter, 0% loss
+# Auto-detect determines if this instance is server or client
+# Rename to .sh, chmod +x, and change ./GONetSandbox to your game name
+#
+# IMPORTANT: Network simulation only works in DEVELOPMENT BUILDS or the Unity Editor!
+#            These arguments are ignored in Release builds (compiled out for zero overhead).
+
+./GONetSandbox -netsim-preset lan &
