@@ -1,1 +1,1 @@
-{"ScenePathsIncluded":["Assets/GONet/Sample/GONetLobby.unity","Assets/GONet/Sample/GONetSample.unity","Assets/GONet/Sample/Projectile/ProjectileTest.unity"],"FirstSceneIndex":0,"dateTimeBuildSucceeded":"2026-01-29T17:27:24.0577969-05:00"}
+{"ScenePathsIncluded":["Assets/Scenes/Bootstrap.unity","Assets/Scenes/MainMenu.unity","Assets/Scenes/Racetrack.unity","Assets/Scenes/KartCustomization.unity","Assets/Scenes/TrackSelection.unity"],"FirstSceneIndex":0,"dateTimeBuildSucceeded":"2026-02-19T03:13:25.1391272-05:00"}

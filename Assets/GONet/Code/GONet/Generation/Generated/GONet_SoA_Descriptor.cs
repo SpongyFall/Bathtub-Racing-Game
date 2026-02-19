@@ -30,24 +30,16 @@ namespace GONet.Generation
         // Auto-generated from prefab + profile analysis
 
         // Stream 1: SCALAR @ 24.0 Hz
-        public const int CAPACITY_SCALAR_24HZ = 900;
+        public const int CAPACITY_SCALAR_24HZ = 600;
         public const float INTERVAL_SCALAR_24HZ = 0.041667f; // 1/24.0
 
-        // Stream 2: VECTOR3 @ 24.0 Hz
-        public const int CAPACITY_VECTOR3_24HZ = 200;
-        public const float INTERVAL_VECTOR3_24HZ = 0.041667f; // 1/24.0
-
-        // Stream 3: QUATERNION @ 24.0 Hz
-        public const int CAPACITY_QUATERNION_24HZ = 200;
+        // Stream 2: QUATERNION @ 24.0 Hz
+        public const int CAPACITY_QUATERNION_24HZ = 100;
         public const float INTERVAL_QUATERNION_24HZ = 0.041667f; // 1/24.0
 
-        // Stream 4: VECTOR2 @ 24.0 Hz
-        public const int CAPACITY_VECTOR2_24HZ = 100;
-        public const float INTERVAL_VECTOR2_24HZ = 0.041667f; // 1/24.0
-
-        // Stream 5: VECTOR4 @ 24.0 Hz
-        public const int CAPACITY_VECTOR4_24HZ = 100;
-        public const float INTERVAL_VECTOR4_24HZ = 0.041667f; // 1/24.0
+        // Stream 3: VECTOR3 @ 24.0 Hz
+        public const int CAPACITY_VECTOR3_24HZ = 100;
+        public const float INTERVAL_VECTOR3_24HZ = 0.041667f; // 1/24.0
 
 
         // ===== PER-CODEGEN-ID STREAM MAPPING =====
@@ -56,20 +48,16 @@ namespace GONet.Generation
         public static readonly Dictionary<byte, StreamParticipation> CodeGenIdToStreams = new Dictionary<byte, StreamParticipation>
         {
             // CodeGenId 1
-            { 1, new StreamParticipation { SCALAR_24Hz = true, VECTOR3_24Hz = true, QUATERNION_24Hz = true }},
+            { 1, new StreamParticipation { SCALAR_24Hz = true, QUATERNION_24Hz = true, VECTOR3_24Hz = true }},
             // CodeGenId 2
-            { 2, new StreamParticipation { SCALAR_24Hz = true, VECTOR3_24Hz = true, QUATERNION_24Hz = true }},
-            // CodeGenId 3
-            { 3, new StreamParticipation { SCALAR_24Hz = true, VECTOR3_24Hz = true, QUATERNION_24Hz = true, VECTOR2_24Hz = true, VECTOR4_24Hz = true }},
+            { 2, new StreamParticipation { SCALAR_24Hz = true, QUATERNION_24Hz = true, VECTOR3_24Hz = true }},
         };
 
         public struct StreamParticipation
         {
             public bool SCALAR_24Hz;
-            public bool VECTOR3_24Hz;
             public bool QUATERNION_24Hz;
-            public bool VECTOR2_24Hz;
-            public bool VECTOR4_24Hz;
+            public bool VECTOR3_24Hz;
         }
 
         // ===== INITIALIZATION =====
@@ -78,7 +66,7 @@ namespace GONet.Generation
             var soa = new NonAuthorityBlendingSoA_Final();
 
             // Initialize shadow buffers
-            soa.InitializeShadowBuffers(200, 200);
+            soa.InitializeShadowBuffers(100, 100);
 
             // ===== VECTOR3 STREAMS (Positions) =====
             soa.positionStreams = new ValueStream_Position[1]; // Managed array for ref access

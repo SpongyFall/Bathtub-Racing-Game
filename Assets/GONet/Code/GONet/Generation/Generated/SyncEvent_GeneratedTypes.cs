@@ -11,13 +11,6 @@ namespace GONet
 		SyncEvent_Transform_position = 6,
 		SyncEvent_ClaimableObjectViaRpcs_ClaimedByAuthorityId = 7,
 		SyncEvent_ClaimableObjectViaRpcs_TotalClaimCount = 8,
-		SyncEvent_AllBlendableTypesTest_syncedPosition = 9,
-		SyncEvent_AllBlendableTypesTest_syncedRotation = 10,
-		SyncEvent_AllBlendableTypesTest_syncedVector2 = 11,
-		SyncEvent_AllBlendableTypesTest_syncedVector2_B = 12,
-		SyncEvent_AllBlendableTypesTest_syncedVector4 = 13,
-		SyncEvent_AllBlendableTypesTest_syncedVector4_B = 14,
-		SyncEvent_AllBlendableTypesTest_syncedScale = 15,
 
 	}
 }

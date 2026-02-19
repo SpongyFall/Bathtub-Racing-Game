@@ -99,3 +99,9 @@ InitTestScene*.unity*
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
 UPDATED.unity
 UPDATED.unity.meta
+
+# Hot Reload (Singularity Group)
+/Packages/com.singularitygroup.hotreload/
+
+# Odin Inspector (Sirenix)
+/Assets/Plugins/Sirenix/

@@ -813,7 +813,7 @@ PlayerSettings:
   webGLWebAssemblyBigInt: 0
   webGLCloseOnQuit: 0
   scriptingDefineSymbols:
-    Standalone: LOG_DEBUG;LOG_INFO;LOG_WARNING;LOG_ERROR;LOG_FATAL
+    Standalone: LOG_DEBUG;LOG_INFO;LOG_WARNING;LOG_ERROR;LOG_FATAL;ODIN_INSPECTOR;ODIN_INSPECTOR_3;ODIN_INSPECTOR_3_1;ODIN_INSPECTOR_3_2;ODIN_INSPECTOR_3_3
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:
