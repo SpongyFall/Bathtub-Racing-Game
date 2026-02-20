@@ -49,7 +49,8 @@ public class MainMenuManager : MonoBehaviour, IOrderedScript
 
     void Update()
     {
-        JoiningRandomPanel.SetActiveSafe(SteamManager.IsJoiningRandom);
+        if (SteamManager.Instance != null)
+            JoiningRandomPanel.SetActiveSafe(SteamManager.IsJoiningRandom);
     }
 
     public void ShowPanel(GameObject panel, bool show)

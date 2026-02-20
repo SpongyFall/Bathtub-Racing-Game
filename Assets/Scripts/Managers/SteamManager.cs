@@ -3,6 +3,7 @@ using Steamworks;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 
 public class SteamManager : MonoBehaviour, IOrderedScript
@@ -29,6 +30,9 @@ public class SteamManager : MonoBehaviour, IOrderedScript
     public static event Action<PersonaStateChange_t, bool> OnLobbyPlayerJoined;
     public static event Action<CSteamID, Sprite> OnAvatarLoaded;
 
+    // Fired for every chat message received in the lobby (including your own).
+    public static event Action<CSteamID, string> OnLobbyChatMessage;
+
     static Callback<LobbyCreated_t> cbLobbyCreated;
     static Callback<GameLobbyJoinRequested_t> cbLobbyJoinRequested;
     static Callback<LobbyEnter_t> cbLobbyEnter;
@@ -38,6 +42,7 @@ public class SteamManager : MonoBehaviour, IOrderedScript
 
     static Callback<PersonaStateChange_t> cbPersonaStateChange;
     static Callback<AvatarImageLoaded_t> cbAvatarImageLoaded;
+    static Callback<LobbyChatMsg_t> cbLobbyChatMsg;
 
     static Dictionary<ulong, Sprite> avatarCache { get; } = new();
 
@@ -61,6 +66,7 @@ public class SteamManager : MonoBehaviour, IOrderedScript
 
         cbPersonaStateChange = Callback<PersonaStateChange_t>.Create(PersonaStateChange);
         cbAvatarImageLoaded = Callback<AvatarImageLoaded_t>.Create(AvatarImageLoaded);
+        cbLobbyChatMsg = Callback<LobbyChatMsg_t>.Create(LobbyChatMsg);
     }
 
     public void OrderedStart()
@@ -83,6 +89,7 @@ public class SteamManager : MonoBehaviour, IOrderedScript
 
         cbPersonaStateChange?.Dispose();
         cbAvatarImageLoaded?.Dispose();
+        cbLobbyChatMsg?.Dispose();
     }
 
     public static void CreateLobby()
@@ -229,6 +236,34 @@ public class SteamManager : MonoBehaviour, IOrderedScript
         TryGetAvatar(info.m_steamID, out Sprite sprite);
 
         OnAvatarLoaded.InvokeSafe(nameof(OnAvatarLoaded), info.m_steamID, sprite);
+    }
+
+    static void LobbyChatMsg(LobbyChatMsg_t info)
+    {
+        if ((EChatEntryType)info.m_eChatEntryType != EChatEntryType.k_EChatEntryTypeChatMsg)
+            return;
+
+        var lobbyId = new CSteamID(info.m_ulSteamIDLobby);
+        var senderId = new CSteamID(info.m_ulSteamIDUser);
+
+        byte[] data = new byte[4096];
+        int len = SteamMatchmaking.GetLobbyChatEntry(lobbyId, (int)info.m_iChatID, out CSteamID _, data, data.Length, out EChatEntryType _);
+
+        string message = Encoding.UTF8.GetString(data, 0, len);
+        OnLobbyChatMessage.InvokeSafe(nameof(OnLobbyChatMessage), senderId, message);
+    }
+
+    /// <summary>
+    /// Sends a chat message to everyone in the current lobby (including yourself — you will
+    /// receive your own message back via <see cref="OnLobbyChatMessage"/>).
+    /// </summary>
+    public static void SendChatMessage(string message)
+    {
+        if (!InSteamLobby || string.IsNullOrWhiteSpace(message))
+            return;
+
+        byte[] data = Encoding.UTF8.GetBytes(message);
+        SteamMatchmaking.SendLobbyChatMsg(LobbyId.Value, data, data.Length);
     }
 
     /// <summary>

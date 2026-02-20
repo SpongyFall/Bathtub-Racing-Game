@@ -1,8 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Steamworks;
 using UnityEngine.UI;
+using Steamworks;
+using TMPro;
 using System;
 
 public class LobbyUI : MonoBehaviour, IOrderedScript
@@ -14,8 +15,16 @@ public class LobbyUI : MonoBehaviour, IOrderedScript
     public Transform LobbyPlayerParent;
     public LobbyPlayer PlayerPrefab;
     [Space]
+    [Header("Chat")]
+    public ScrollRect ChatScroll;
+    public Transform ChatContent;
+    public TextMeshProUGUI ChatMessagePrefab;
+    public TMP_InputField ChatInput;
+    public Button SendBtn;
+    [Space]
     [Header("Auto Set")]
     public List<LobbyPlayer> SpawnedPlayers = new();
+    List<TextMeshProUGUI> spawnedMessages = new();
 
     public int CallOrder => 0;
 
@@ -24,6 +33,8 @@ public class LobbyUI : MonoBehaviour, IOrderedScript
         InviteBtn.onClick.AddListener(OnInviteClick);
         StartBtn.onClick.AddListener(OnStartClick);
         LeaveBtn.onClick.AddListener(OnLeaveClick);
+        SendBtn.onClick.AddListener(OnSendClick);
+        ChatInput.onSubmit.AddListener(_ => OnSendClick());
     }
 
     public void OrderedAwake()
@@ -34,6 +45,7 @@ public class LobbyUI : MonoBehaviour, IOrderedScript
         
         SteamManager.OnPersonaStateChange += SteamManager_OnPersonaStateChange;
         SteamManager.OnAvatarLoaded += SteamManager_OnAvatarLoaded;
+        SteamManager.OnLobbyChatMessage += SteamManager_OnLobbyChatMessage;
     }
 
     public void OrderedStart()
@@ -48,6 +60,7 @@ public class LobbyUI : MonoBehaviour, IOrderedScript
         
         SteamManager.OnPersonaStateChange -= SteamManager_OnPersonaStateChange;
         SteamManager.OnAvatarLoaded -= SteamManager_OnAvatarLoaded;
+        SteamManager.OnLobbyChatMessage -= SteamManager_OnLobbyChatMessage;
     }
 
     void SteamManager_OnLobbyEntered(LobbyEnter_t info)
@@ -68,6 +81,7 @@ public class LobbyUI : MonoBehaviour, IOrderedScript
     void SteamManager_OnLobbyDisconnected(ulong lobbyId)
     {
         UpdateUI();
+        ClearChat();
         MainMenuManager.Instance.ShowPanel(gameObject, false);
     }
     
@@ -81,6 +95,11 @@ public class LobbyUI : MonoBehaviour, IOrderedScript
     {
         if (SpawnedPlayers.Find(x => x.SteamId.m_SteamID == steamId.m_SteamID) is LobbyPlayer spawned)
             spawned.UpdateInfo();
+    }
+    void SteamManager_OnLobbyChatMessage(CSteamID senderId, string message)
+    {
+        string senderName = SteamFriends.GetFriendPersonaName(senderId);
+        AppendChatMessage($"{senderName}: {message}");
     }
 
     public void UpdateUI()
@@ -114,5 +133,36 @@ public class LobbyUI : MonoBehaviour, IOrderedScript
     void OnLeaveClick()
     {
         SteamManager.LeaveLobby();
+    }
+    void OnSendClick()
+    {
+        string text = ChatInput.text.Trim();
+        if (string.IsNullOrEmpty(text))
+            return;
+
+        SteamManager.SendChatMessage(text);
+        ChatInput.text = string.Empty;
+        ChatInput.ActivateInputField();
+    }
+
+    void AppendChatMessage(string text)
+    {
+        var msg = Instantiate(ChatMessagePrefab, ChatContent);
+        msg.text = text;
+        spawnedMessages.Add(msg);
+
+        LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)ChatContent);
+        StartCoroutine(ScrollToBottom());
+    }
+    IEnumerator ScrollToBottom()
+    {
+        yield return null; // wait one frame for layout to update
+        ChatScroll.verticalNormalizedPosition = 0f;
+    }
+
+    void ClearChat()
+    {
+        spawnedMessages.ForEach(x => Destroy(x.gameObject));
+        spawnedMessages.Clear();
     }
 }
