@@ -33,6 +33,9 @@ public class SteamManager : MonoBehaviour, IOrderedScript
     // Fired for every chat message received in the lobby (including your own).
     public static event Action<CSteamID, string> OnLobbyChatMessage;
 
+    // Fired when lobby metadata changes (e.g. host signals game start).
+    public static event Action<LobbyDataUpdate_t> OnLobbyDataUpdate;
+
     static Callback<LobbyCreated_t> cbLobbyCreated;
     static Callback<GameLobbyJoinRequested_t> cbLobbyJoinRequested;
     static Callback<LobbyEnter_t> cbLobbyEnter;
@@ -43,6 +46,7 @@ public class SteamManager : MonoBehaviour, IOrderedScript
     static Callback<PersonaStateChange_t> cbPersonaStateChange;
     static Callback<AvatarImageLoaded_t> cbAvatarImageLoaded;
     static Callback<LobbyChatMsg_t> cbLobbyChatMsg;
+    static Callback<LobbyDataUpdate_t> cbLobbyDataUpdate;
 
     static Dictionary<ulong, Sprite> avatarCache { get; } = new();
 
@@ -67,6 +71,7 @@ public class SteamManager : MonoBehaviour, IOrderedScript
         cbPersonaStateChange = Callback<PersonaStateChange_t>.Create(PersonaStateChange);
         cbAvatarImageLoaded = Callback<AvatarImageLoaded_t>.Create(AvatarImageLoaded);
         cbLobbyChatMsg = Callback<LobbyChatMsg_t>.Create(LobbyChatMsg);
+        cbLobbyDataUpdate = Callback<LobbyDataUpdate_t>.Create(LobbyDataUpdate);
     }
 
     public void OrderedStart()
@@ -90,6 +95,7 @@ public class SteamManager : MonoBehaviour, IOrderedScript
         cbPersonaStateChange?.Dispose();
         cbAvatarImageLoaded?.Dispose();
         cbLobbyChatMsg?.Dispose();
+        cbLobbyDataUpdate?.Dispose();
     }
 
     public static void CreateLobby()
@@ -105,6 +111,10 @@ public class SteamManager : MonoBehaviour, IOrderedScript
         }
 
         Debug.Log($"Created Steam lobby ID: {info.m_ulSteamIDLobby}");
+
+        // Publish the host's SteamID so clients can connect to us via P2P.
+        SteamMatchmaking.SetLobbyData(new CSteamID(info.m_ulSteamIDLobby), "hostSteamId", LocalSteamId.m_SteamID.ToString());
+
         OnLobbyCreated.InvokeSafe(nameof(OnLobbyCreated), info);
     }
 
@@ -251,6 +261,11 @@ public class SteamManager : MonoBehaviour, IOrderedScript
 
         string message = Encoding.UTF8.GetString(data, 0, len);
         OnLobbyChatMessage.InvokeSafe(nameof(OnLobbyChatMessage), senderId, message);
+    }
+
+    static void LobbyDataUpdate(LobbyDataUpdate_t info)
+    {
+        OnLobbyDataUpdate.InvokeSafe(nameof(OnLobbyDataUpdate), info);
     }
 
     /// <summary>

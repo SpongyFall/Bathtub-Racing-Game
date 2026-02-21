@@ -5444,6 +5444,8 @@ GameObject:
   - component: {fileID: 1749657296}
   - component: {fileID: 1749657300}
   - component: {fileID: 1749657297}
+  - component: {fileID: 1749657302}
+  - component: {fileID: 1749657301}
   m_Layer: 0
   m_Name: Static Scripts
   m_TagString: Untagged
@@ -5531,6 +5533,37 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   GONetSteamManager: {fileID: 1749657296}
+--- !u!114 &1749657301
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1749657293}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1f8a3efe1c423e43ae08f4508422b09, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gonetGlobalPrefab: {fileID: 999183558881590987, guid: 6dd6e7a1f7901e440a632b77f87d21bb, type: 3}
+  currentPreset: {fileID: 0}
+  configPath: GONet/NetworkLobbyConfig.json
+  gameSceneName: 
+  isConnected: 0
+  statusMessage: Not connected
+--- !u!114 &1749657302
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1749657293}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f2f9451043728440a1398b78228bd6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gonetConnectionManager: {fileID: 1749657301}
 --- !u!1 &1907875662
 GameObject:
   m_ObjectHideFlags: 0

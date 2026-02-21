@@ -47,5 +47,5 @@ public enum SceneType
     MainMenu,
     KartCustomization,
     TrackSelection,
-    RaceTrack,
+    Racetrack,
 }

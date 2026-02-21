@@ -129,6 +129,7 @@ public class LobbyUI : MonoBehaviour, IOrderedScript
     }
     void OnStartClick()
     {
+        NetworkManager.Instance.StartGame();
     }
     void OnLeaveClick()
     {
