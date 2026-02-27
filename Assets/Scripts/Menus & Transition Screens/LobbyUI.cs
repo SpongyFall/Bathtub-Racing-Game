@@ -70,7 +70,7 @@ public class LobbyUI : MonoBehaviour, IOrderedScript
 
         StartBtn.gameObject.SetActive(SteamManager.IsLobbyOwner);
     }
-    void SteamManager_OnLobbyPlayerJoined(PersonaStateChange_t info, bool joined)
+    void SteamManager_OnLobbyPlayerJoined(LobbyChatUpdate_t info, bool joined)
     {
         //May or may not be in lobby, client player disconnect happens first.
         if (SteamManager.InSteamLobby)

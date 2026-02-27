@@ -27,7 +27,7 @@ public class SteamManager : MonoBehaviour, IOrderedScript
     public static event Action<LobbyChatUpdate_t> OnLobbyChatUpdate;
 
     public static event Action<PersonaStateChange_t> OnPersonaStateChange;
-    public static event Action<PersonaStateChange_t, bool> OnLobbyPlayerJoined;
+    public static event Action<LobbyChatUpdate_t, bool> OnLobbyPlayerJoined;
     public static event Action<CSteamID, Sprite> OnAvatarLoaded;
 
     // Fired for every chat message received in the lobby (including your own).
@@ -76,7 +76,7 @@ public class SteamManager : MonoBehaviour, IOrderedScript
 
     public void OrderedStart()
     {
-        
+
     }
 
     void Update()
@@ -171,29 +171,37 @@ public class SteamManager : MonoBehaviour, IOrderedScript
     {
         var lobbyId = new CSteamID(info.m_ulSteamIDLobby);
         var userId = new CSteamID(info.m_ulSteamIDUserChanged);
+        //Name could be null here (I think?)
+        var playerName = SteamFriends.GetFriendPersonaName(userId);
         var state = (EChatMemberStateChange)info.m_rgfChatMemberStateChange;
 
-        //if (state.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeEntered))
-        //{
-        //    Debug.Log($"User {userId} joined Steam lobby {lobbyId}");
-        //    //Someone joined, request non-cached player info.
-        //    RequestPlayerInfo();
-        //}
-
-        //if (state.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeLeft))
-        //{
-        //    Debug.Log($"User {userId} left Steam lobby {lobbyId}");
-        //}
-        //if (state.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeDisconnected))
-        //{
-        //    Debug.Log($"User {userId} disconnected from Steam lobby {lobbyId}");
-        //}
-        //if (state.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeKicked))
-        //{
-        //    Debug.Log($"User {userId} kicked from Steam lobby {lobbyId}");
-        //}
-
         OnLobbyChatUpdate.InvokeSafe(nameof(OnLobbyChatUpdate), info);
+
+        if (state.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeEntered))
+        {
+            Debug.Log($"Player '{playerName}' with Id: {userId} joined Steam lobby {lobbyId}");
+
+            //Someone joined, request non-cached player info.
+            RequestPlayerInfo();
+
+            OnLobbyPlayerJoined.InvokeSafe(nameof(OnLobbyPlayerJoined), info, true);
+        }
+        else if (state.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeLeft)
+            || state.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeDisconnected)
+            || state.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeKicked)
+            || state.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeBanned))
+        {
+            if (state.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeLeft))
+                Debug.Log($"Player '{playerName}' with Id: {userId} left Steam lobby {lobbyId}");
+            if (state.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeDisconnected))
+                Debug.Log($"Player '{playerName}' with Id: {userId} disconnected from Steam lobby {lobbyId}");
+            if (state.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeKicked))
+                Debug.Log($"Player '{playerName}' with Id: {userId} kicked from Steam lobby {lobbyId}");
+            if (state.HasFlag(EChatMemberStateChange.k_EChatMemberStateChangeKicked))
+                Debug.Log($"Player '{playerName}' with Id: {userId} banned from Steam lobby {lobbyId}");
+
+            OnLobbyPlayerJoined.InvokeSafe(nameof(OnLobbyPlayerJoined), info, false);
+        }
     }
 
     public static void RequestPlayerInfo()
@@ -211,7 +219,7 @@ public class SteamManager : MonoBehaviour, IOrderedScript
     static void PersonaStateChange(PersonaStateChange_t info)
     {
         var steamId = new CSteamID(info.m_ulSteamID);
-        string playerName = SteamFriends.GetFriendPersonaName(steamId);
+        var playerName = SteamFriends.GetFriendPersonaName(steamId);
         var changeFlags = info.m_nChangeFlags;
 
         var lobbyIds = GetLobbyPlayerIds();
@@ -220,12 +228,14 @@ public class SteamManager : MonoBehaviour, IOrderedScript
         if (inLobby)
             Debug.Log($"{nameof(PersonaStateChange)} for lobby player Id: {info.m_ulSteamID}, name: '{playerName}', changeFlags: {changeFlags}");
 
+        /*
         //Means player either left or joined.
         if (changeFlags.HasFlag(EPersonaChange.k_EPersonaChangeGameServer))
         {
             Debug.Log($"Player {(inLobby ? "joined" : "left")} with Id: {info.m_ulSteamID}, name: '{playerName}'");
             OnLobbyPlayerJoined.InvokeSafe(nameof(OnLobbyPlayerJoined), info, inLobby);
         }
+        */
 
         //We'll get persona changes for friends not in our lobby, so ignore those for lobby stuff.
         if (inLobby)
@@ -240,8 +250,9 @@ public class SteamManager : MonoBehaviour, IOrderedScript
     {
         if (info.m_iImage <= 0)
             return;
+        var playerName = SteamFriends.GetFriendPersonaName(info.m_steamID);
 
-        Debug.Log($"{nameof(AvatarImageLoaded)} for player Id: {info.m_steamID}");
+        Debug.Log($"{nameof(AvatarImageLoaded)} for player: '{playerName}' with Id: {info.m_steamID}");
 
         TryGetAvatar(info.m_steamID, out Sprite sprite);
 
