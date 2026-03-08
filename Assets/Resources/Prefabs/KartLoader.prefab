@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1286001880283739178
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5822787244832444383}
+  - component: {fileID: 5024233244179726269}
+  m_Layer: 0
+  m_Name: KartLoader
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5822787244832444383
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1286001880283739178}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.28762576, z: -0, w: 0.9577429}
+  m_LocalPosition: {x: 380.59, y: 25.817, z: 413.502}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: -33.432, z: 0}
+--- !u!114 &5024233244179726269
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1286001880283739178}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a72709ed0b14244aae22eb1f242a6d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  kartBasePrefab: {fileID: 997416880795524121, guid: b020f304bd4c81b4ab75eceb407377bf, type: 3}
+  wheelOptions:
+  - {fileID: 2082728616056488164, guid: 267efc43f7ca55345b578f35093809c1, type: 3}
+  - {fileID: 3590999028391792349, guid: e48172856f6b1194da2ec50c1d8f4bb8, type: 3}
+  - {fileID: 4241582956459524518, guid: 03d2345d21b684745af0090d1000c879, type: 3}
+  rollCageOptions:
+  - {fileID: 7075197104912712290, guid: ef355bc5e3e278a449707fd2cf3978b5, type: 3}
+  - {fileID: 8876785644950513621, guid: 61fb6b2733231c243aed2010836bbdb8, type: 3}
+  - {fileID: 4156998317952926278, guid: baa000bae44509042b6c1bc603f8565b, type: 3}
+  extraDetailOptions:
+  - {fileID: 5910080085022729869, guid: 4b3491291e020b04bbe6bfe1730df0d8, type: 3}
+  - {fileID: 1887548023831640905, guid: c35fea474ebe2e04abbde81a6fb23ee2, type: 3}
+  decalOptions: []
+  bodyMaterial: {fileID: 0}
+  trimMaterial: {fileID: 0}
+  decalMaterial: {fileID: 0}

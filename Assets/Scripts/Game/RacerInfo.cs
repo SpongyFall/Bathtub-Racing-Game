@@ -1,3 +1,4 @@
+using GONet;
 using UnityEngine;
 
 // Stores all race-related state for a racer (player or AI).
@@ -10,28 +11,34 @@ public class RacerInfo : MonoBehaviour
 
     [Header("Race Progress")]
     [Tooltip("Current completed laps. 0-based index.")]
+    [GONetAutoMagicalSync]
     public int currentLap = 0;
 
     [Tooltip("Total number of laps in this race.")]
     public int totalLaps = 3;
 
     [Tooltip("Current active waypoint index.")]
+    [GONetAutoMagicalSync]
     public int currentWaypoint = 0;
 
     [Tooltip("Distance to the upcoming waypoint.")]
+    [GONetAutoMagicalSync(Reliability = AutoMagicalSyncReliability.Unreliable, ShouldBlendBetweenValuesReceived = true)]
     public float distanceToNext = 0f;
 
+    [GONetAutoMagicalSync]
     public bool hasFinished = false;
 
 
     // Waypoint container controlling track layout. (AI overrides this if needed.)
     public WaypointContainer waypointContainer { get; private set; }
 
+    private GONetParticipant gonetParticipant;
     private OpponentKartAI ai;
     private Transform tr;
 
     void Awake()
     {
+        gonetParticipant = GetComponent<GONetParticipant>();
         tr = transform;
         ai = GetComponent<OpponentKartAI>();
 
@@ -51,6 +58,9 @@ public class RacerInfo : MonoBehaviour
 
     void Update()
     {
+        // Only the owner writes waypoint progress; remote clients receive it via sync.
+        if (gonetParticipant != null && !gonetParticipant.IsLocallyControlled) return;
+
         if (!HasValidWaypoints())
             return;
 

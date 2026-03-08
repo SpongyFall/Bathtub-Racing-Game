@@ -1,0 +1,72 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2213447498979051045
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3334504206298019920}
+  - component: {fileID: 4436816172106759156}
+  m_Layer: 0
+  m_Name: CustomizationController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3334504206298019920
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2213447498979051045}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 400.21103, y: 395.8756, z: 244.91692}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4436816172106759156
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2213447498979051045}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d64308c483ed1a54198f1928ab9f1a3d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  kart: {fileID: 0}
+  wheels: {fileID: 0}
+  rollCage: {fileID: 0}
+  extraDetail: {fileID: 0}
+  decal: {fileID: 0}
+  wheelOptions:
+  - {fileID: 3590999028391792349, guid: e48172856f6b1194da2ec50c1d8f4bb8, type: 3}
+  - {fileID: 2082728616056488164, guid: 267efc43f7ca55345b578f35093809c1, type: 3}
+  - {fileID: 4241582956459524518, guid: 03d2345d21b684745af0090d1000c879, type: 3}
+  rollCageOptions:
+  - {fileID: 7075197104912712290, guid: ef355bc5e3e278a449707fd2cf3978b5, type: 3}
+  - {fileID: 8876785644950513621, guid: 61fb6b2733231c243aed2010836bbdb8, type: 3}
+  - {fileID: 4156998317952926278, guid: baa000bae44509042b6c1bc603f8565b, type: 3}
+  extraDetailOptions:
+  - {fileID: 5910080085022729869, guid: 4b3491291e020b04bbe6bfe1730df0d8, type: 3}
+  - {fileID: 1887548023831640905, guid: c35fea474ebe2e04abbde81a6fb23ee2, type: 3}
+  decalOptions: []
+  bodyMaterial: {fileID: 0}
+  trimMaterial: {fileID: 0}
+  decalMaterial: {fileID: 0}
+  rollCageInput: {fileID: 0}
+  extraDetailInput: {fileID: 0}
+  decalInput: {fileID: 0}
+  wheelInput: {fileID: 0}
+  kartNameInput: {fileID: 0}
+  driverNameInput: {fileID: 0}

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using GONet;
+using UnityEngine;
 using System.Collections;
 using TMPro;
 
@@ -55,6 +56,7 @@ public class PlayerKartController : MonoBehaviour
     [Header("Stabilization Settings")]
     public float groundForce = 50f;
 
+    private GONetParticipant gonetParticipant;
     private Rigidbody rb;
     private Collider col;
 
@@ -72,6 +74,7 @@ public class PlayerKartController : MonoBehaviour
 
     void Awake()
     {
+        gonetParticipant = GetComponent<GONetParticipant>();
         rb = GetComponent<Rigidbody>();
         col = GetComponent<Collider>();
 
@@ -111,14 +114,19 @@ public class PlayerKartController : MonoBehaviour
         }
     }
 
+    // True when no GONetParticipant is present (offline/solo) or this is the locally-owned kart.
+    private bool IsLocallyControlled => gonetParticipant == null || gonetParticipant.IsLocallyControlled;
+
     void Update()
     {
+        if (!IsLocallyControlled) return;
         ApplyInput();
         UpdateEngineSound();
     }
 
     void FixedUpdate()
     {
+        if (!IsLocallyControlled) return;
         UpdatePosition();
         HandleCamera();
         StabilizeKart();
@@ -318,6 +326,8 @@ public class PlayerKartController : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
+        if (!IsLocallyControlled) return;
+
         if (collision.collider.CompareTag("Road") ||
             collision.collider.CompareTag("Terrain"))
         {

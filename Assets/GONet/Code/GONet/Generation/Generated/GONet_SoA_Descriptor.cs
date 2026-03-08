@@ -30,15 +30,15 @@ namespace GONet.Generation
         // Auto-generated from prefab + profile analysis
 
         // Stream 1: SCALAR @ 24.0 Hz
-        public const int CAPACITY_SCALAR_24HZ = 600;
+        public const int CAPACITY_SCALAR_24HZ = 1050;
         public const float INTERVAL_SCALAR_24HZ = 0.041667f; // 1/24.0
 
         // Stream 2: QUATERNION @ 24.0 Hz
-        public const int CAPACITY_QUATERNION_24HZ = 100;
+        public const int CAPACITY_QUATERNION_24HZ = 150;
         public const float INTERVAL_QUATERNION_24HZ = 0.041667f; // 1/24.0
 
         // Stream 3: VECTOR3 @ 24.0 Hz
-        public const int CAPACITY_VECTOR3_24HZ = 100;
+        public const int CAPACITY_VECTOR3_24HZ = 150;
         public const float INTERVAL_VECTOR3_24HZ = 0.041667f; // 1/24.0
 
 
@@ -51,6 +51,8 @@ namespace GONet.Generation
             { 1, new StreamParticipation { SCALAR_24Hz = true, QUATERNION_24Hz = true, VECTOR3_24Hz = true }},
             // CodeGenId 2
             { 2, new StreamParticipation { SCALAR_24Hz = true, QUATERNION_24Hz = true, VECTOR3_24Hz = true }},
+            // CodeGenId 3
+            { 3, new StreamParticipation { SCALAR_24Hz = true, QUATERNION_24Hz = true, VECTOR3_24Hz = true }},
         };
 
         public struct StreamParticipation
@@ -66,7 +68,7 @@ namespace GONet.Generation
             var soa = new NonAuthorityBlendingSoA_Final();
 
             // Initialize shadow buffers
-            soa.InitializeShadowBuffers(100, 100);
+            soa.InitializeShadowBuffers(150, 150);
 
             // ===== VECTOR3 STREAMS (Positions) =====
             soa.positionStreams = new ValueStream_Position[1]; // Managed array for ref access

@@ -1,13 +1,16 @@
+using GONet;
 using UnityEngine;
 
 [RequireComponent(typeof(RacerInfo))]
 public class PlayerWaypointTracker : MonoBehaviour
 {
+    private GONetParticipant gonetParticipant;
     private RacerInfo racerInfo;
     private WaypointContainer waypointContainer;
 
     void Start()
     {
+        gonetParticipant = GetComponent<GONetParticipant>();
         racerInfo = GetComponent<RacerInfo>();
         waypointContainer = FindFirstObjectByType<WaypointContainer>();
 
@@ -16,6 +19,9 @@ public class PlayerWaypointTracker : MonoBehaviour
 
     void FixedUpdate()
     {
+        // Only the owning client should write waypoint data; synced values handle remote karts.
+        if (gonetParticipant != null && !gonetParticipant.IsLocallyControlled) return;
+
         if (waypointContainer == null || racerInfo == null)
             return;
 

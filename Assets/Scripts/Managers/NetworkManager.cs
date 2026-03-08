@@ -39,7 +39,8 @@ public class NetworkManager : MonoBehaviour, IOrderedScript
     /// </summary>
     public void StartGame()
     {
-        // Broadcast to all lobby members that the game is starting.
+        // Broadcast host SteamID and state so clients can connect.
+        SteamMatchmaking.SetLobbyData(SteamManager.LobbyId.Value, "hostSteamId", SteamManager.LocalSteamId.ToString());
         SteamMatchmaking.SetLobbyData(SteamManager.LobbyId.Value, "state", "starting");
 
         ConnectGONet(isHost: true, hostSteamId: null);

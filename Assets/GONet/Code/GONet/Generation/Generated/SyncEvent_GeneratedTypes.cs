@@ -11,6 +11,10 @@ namespace GONet
 		SyncEvent_Transform_position = 6,
 		SyncEvent_ClaimableObjectViaRpcs_ClaimedByAuthorityId = 7,
 		SyncEvent_ClaimableObjectViaRpcs_TotalClaimCount = 8,
+		SyncEvent_RacerInfo_currentLap = 9,
+		SyncEvent_RacerInfo_currentWaypoint = 10,
+		SyncEvent_RacerInfo_distanceToNext = 11,
+		SyncEvent_RacerInfo_hasFinished = 12,
 
 	}
 }

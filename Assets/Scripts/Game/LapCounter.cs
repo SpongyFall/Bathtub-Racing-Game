@@ -1,3 +1,4 @@
+using GONet;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -39,12 +40,14 @@ public class LapCounter : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        // PLAYER
+        // PLAYER â€” only count laps for the locally-owned kart (not remote players' karts).
         if (other.CompareTag("Player") && canTriggerLap)
         {
+            var gnp = other.GetComponent<GONetParticipant>();
+            if (gnp != null && !gnp.IsLocallyControlled) return;
             AdvanceLap();
         }
-        // AI – update their RacerInfo only (no UI changes)
+        // AI ï¿½ update their RacerInfo only (no UI changes)
         else if (other.CompareTag("AI"))
         {
             var aiRacer = other.GetComponent<RacerInfo>();

@@ -6,7 +6,7 @@ public class Billboard : MonoBehaviour
 
     void Update()
     {
-        if (cam == null)
+        if (cam == null || !cam.gameObject.activeInHierarchy)
         {
             Camera mainCam = Camera.main;
             if (mainCam != null)
