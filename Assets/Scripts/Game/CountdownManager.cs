@@ -1,3 +1,4 @@
+using GONet;
 using UnityEngine;
 using TMPro;
 using System.Collections;
@@ -14,12 +15,20 @@ public class CountdownManager : MonoBehaviour
         // Wait 1 frame so KartLoader can spawn the kart first
         yield return null;
 
-        // Automatically find the spawned kart
-        playerKart = Object.FindFirstObjectByType<PlayerKartController>();
+        // Find the locally controlled kart (not a remote player's kart).
+        foreach (var kart in Object.FindObjectsByType<PlayerKartController>(FindObjectsSortMode.None))
+        {
+            var gnp = kart.GetComponent<GONet.GONetParticipant>();
+            if (gnp == null || gnp.IsLocallyControlled)
+            {
+                playerKart = kart;
+                break;
+            }
+        }
 
         if (playerKart == null)
         {
-            Debug.LogWarning("CountdownManager: No PlayerKartController found in scene!");
+            Debug.LogWarning("CountdownManager: No local PlayerKartController found in scene!");
         }
 
         StartCoroutine(CountdownSequence());
