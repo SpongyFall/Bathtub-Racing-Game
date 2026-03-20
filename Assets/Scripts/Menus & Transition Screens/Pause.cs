@@ -9,7 +9,7 @@ public class Pause : MonoBehaviour
     
     public GameObject PauseMenu;
 
-    private void Start()
+    void Start()
     {
         _isPaused = false;
         Cursor.visible = false;
@@ -18,7 +18,7 @@ public class Pause : MonoBehaviour
 
     void Update()
     {
-        if(Input.GetKeyDown(KeyCode.Escape))
+        if (Input.GetKeyDown(KeyCode.Escape))
             TogglePause();
     }
 
@@ -28,14 +28,19 @@ public class Pause : MonoBehaviour
         
         if (_isPaused)
         {
-            Time.timeScale = 0;
+            //Only affect time scale in singleplayer.
+            if (!NetworkManager.IsConnectedGONet)
+                Time.timeScale = 0;
+
             PauseMenu.SetActive(true);
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
         }
         else
         {
-            Time.timeScale = 1;
+            if (!NetworkManager.IsConnectedGONet)
+                Time.timeScale = 1;
+
             PauseMenu.SetActive(false);
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;

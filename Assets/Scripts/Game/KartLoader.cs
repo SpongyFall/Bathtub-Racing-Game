@@ -12,7 +12,7 @@ public class KartLoader : MonoBehaviour
 
     void LoadKart()
     {
-        selectedKartName = PlayerPrefs.GetString("SelectedKartName", "");
+        selectedKartName = PlayerPrefs.GetString(SelectCustomizations.SelectedKartNameKey, "");
         GameObject kart;
 
         // Load saved karts

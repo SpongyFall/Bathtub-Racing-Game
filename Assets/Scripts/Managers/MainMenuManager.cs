@@ -10,6 +10,7 @@ public class MainMenuManager : MonoBehaviour, IOrderedScript
 
     public GameObject MainMenuPanel;
     public GameObject JoiningRandomPanel;
+    public LobbyUI LobbyUI;
     [Space]
     public Button HostBtn;
     public Button JoinRandomBtn;
@@ -35,6 +36,9 @@ public class MainMenuManager : MonoBehaviour, IOrderedScript
         ScoresBtn.onClick.AddListener(OnScoresClick);
         AboutBtn.onClick.AddListener(OnAboutClick);
         QuitBtn.onClick.AddListener(OnQuitClick);
+
+        LobbyUI.gameObject.SetActive(true);
+        LobbyUI.gameObject.SetActive(false);
     }
 
     public void OrderedAwake()

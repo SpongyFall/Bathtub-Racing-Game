@@ -46,12 +46,57 @@
             "codeGenerationId": 2
         },
         {
-            "location": "resources://Assets/Resources/Prefabs/PlayerKart.prefab",
-            "unityGuid": "c56a5cae37c1f58478f9a87aacfe6d35",
-            "codeGenerationId": 3
+            "location": "resources://Assets/Resources/Prefabs/Karts/CustomKartBase.prefab",
+            "unityGuid": "73ffa1b9be9991847b175b2229a0abd6",
+            "codeGenerationId": 1
         },
         {
-            "location": "scene://Bootstrap/GONet_GlobalContext",
+            "location": "resources://Assets/Resources/Prefabs/Karts/Kart 1 (Red).prefab",
+            "unityGuid": "cded672173085034a8eda3557d68f12b",
+            "codeGenerationId": 1
+        },
+        {
+            "location": "resources://Assets/Resources/Prefabs/Karts/Kart 2 (Blue).prefab",
+            "unityGuid": "ef5c3afa013b1ba4681f470be357a3d8",
+            "codeGenerationId": 1
+        },
+        {
+            "location": "resources://Assets/Resources/Prefabs/Karts/Kart 3 (Green).prefab",
+            "unityGuid": "f13ac430ec052fb49814e100f6ae5568",
+            "codeGenerationId": 1
+        },
+        {
+            "location": "resources://Assets/Resources/Prefabs/Karts/Kart 4 (Pink).prefab",
+            "unityGuid": "c2c157f06b965e24184363e59630a88d",
+            "codeGenerationId": 1
+        },
+        {
+            "location": "resources://Assets/Resources/Prefabs/Karts/Kart 5 (Grey).prefab",
+            "unityGuid": "0644da20b176c0e4f8637aa80160d2da",
+            "codeGenerationId": 1
+        },
+        {
+            "location": "resources://Assets/Resources/Prefabs/OldPlayerKart.prefab",
+            "unityGuid": "c56a5cae37c1f58478f9a87aacfe6d35",
+            "codeGenerationId": 1
+        },
+        {
+            "location": "scene://Racetrack/Kart 1",
+            "unityGuid": "",
+            "codeGenerationId": 1
+        },
+        {
+            "location": "scene://Racetrack/Kart 2",
+            "unityGuid": "",
+            "codeGenerationId": 1
+        },
+        {
+            "location": "scene://Racetrack/Kart 3",
+            "unityGuid": "",
+            "codeGenerationId": 1
+        },
+        {
+            "location": "scene://Racetrack/Kart 4",
             "unityGuid": "",
             "codeGenerationId": 1
         }

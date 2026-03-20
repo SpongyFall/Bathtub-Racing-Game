@@ -271,6 +271,7 @@ GameObject:
   - component: {fileID: -7066745350045615398}
   - component: {fileID: 5743474538552411622}
   - component: {fileID: 7779416609973596637}
+  - component: {fileID: -1081486052379665876}
   m_Layer: 0
   m_Name: Kart 5 (Grey)
   m_TagString: AI
@@ -375,7 +376,38 @@ MonoBehaviour:
   maxSpeed: 20
   slopeFactor: 1
   groundForce: 50
+  AIWeight: 0
+  bathtubRenderer: {fileID: 0}
   canDrive: 0
+--- !u!114 &-1081486052379665876
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 997416880795524121}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a90b92e03441514aba6c47a0110582a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  UnityGuid: 0644da20b176c0e4f8637aa80160d2da
+  animatorSyncSupport:
+    keys: []
+    values: []
+  RemotelyControlledByAuthorityId: 0
+  SpawnerPersistentId: 0
+  destroyWhenSpawnerLeaves: 1
+  IsRigidBodyOwnerOnlyControlled: 0
+  ShouldHideDuringRemoteInstantiate: 0
+  AutoDontDestroyOnLoad: 0
+  client_overrideLimboMode: 0
+  client_limboMode: 2
+  IsPositionSyncd: 1
+  IsRotationSyncd: 1
+  wasInstantiatedForce: 0
+  myRigidBody: {fileID: 0}
+  myRigidBody2D: {fileID: 0}
 --- !u!1 &1534838958376480559
 GameObject:
   m_ObjectHideFlags: 0

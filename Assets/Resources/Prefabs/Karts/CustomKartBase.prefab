@@ -313,6 +313,8 @@ GameObject:
   - component: {fileID: 86434515137393450}
   - component: {fileID: 9033095591941567120}
   - component: {fileID: 6654165857249740380}
+  - component: {fileID: 653448915517448826}
+  - component: {fileID: 5313369742661248719}
   m_Layer: 0
   m_Name: CustomKartBase
   m_TagString: Player
@@ -448,7 +450,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   racerName: Player
-  isPlayer: 1
+  isClientPlayer: 0
   currentLap: 0
   totalLaps: 3
   currentWaypoint: 0
@@ -466,6 +468,52 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 01da5ea5febf9064499e272618587d5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &653448915517448826
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1825585870739441330}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a90b92e03441514aba6c47a0110582a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  UnityGuid: 73ffa1b9be9991847b175b2229a0abd6
+  animatorSyncSupport:
+    keys: []
+    values: []
+  RemotelyControlledByAuthorityId: 0
+  SpawnerPersistentId: 0
+  destroyWhenSpawnerLeaves: 1
+  IsRigidBodyOwnerOnlyControlled: 0
+  ShouldHideDuringRemoteInstantiate: 0
+  AutoDontDestroyOnLoad: 0
+  client_overrideLimboMode: 0
+  client_limboMode: 2
+  IsPositionSyncd: 1
+  IsRotationSyncd: 1
+  wasInstantiatedForce: 0
+  myRigidBody: {fileID: 0}
+  myRigidBody2D: {fileID: 0}
+--- !u!114 &5313369742661248719
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1825585870739441330}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c96d7490c9bb8a45ad4dbdd9118f68d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isTickReceiver: 0
+  Controller: {fileID: 86434515137393450}
+  RacerInfo: {fileID: 9033095591941567120}
+  CameraObj: {fileID: 3434083390816451928}
+  OwnerSteamId: 0
 --- !u!1 &2187071869602070823
 GameObject:
   m_ObjectHideFlags: 0

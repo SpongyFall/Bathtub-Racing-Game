@@ -10,8 +10,10 @@ using UnityEngine.SceneManagement;
 public class NetworkManager : MonoBehaviour, IOrderedScript
 {
     public static NetworkManager Instance { get; private set; }
+    public static bool IsConnectedGONet => (GONetMain.GONetClient != null && GONetMain.GONetClient.IsConnectedToServer) 
+        || (GONetMain.gonetServer != null && GONetMain.gonetServer.IsRunning);
 
-    [SerializeField] GONetConnectionManager gonetConnectionManager;
+    public GONetConnectionManager GONetConnectionManager;
 
     // Run after SteamManager (CallOrder 0) so lobby state is ready.
     public int CallOrder => 1;
@@ -21,7 +23,7 @@ public class NetworkManager : MonoBehaviour, IOrderedScript
         Instance = this;
 
         SteamManager.OnLobbyDataUpdate += OnLobbyDataUpdate;
-        gonetConnectionManager.OnConnectionSuccess += OnGONetConnected;
+        GONetConnectionManager.OnConnectionSuccess += OnGONetConnected;
     }
 
     public void OrderedStart() { }
@@ -29,8 +31,8 @@ public class NetworkManager : MonoBehaviour, IOrderedScript
     void OnDestroy()
     {
         SteamManager.OnLobbyDataUpdate -= OnLobbyDataUpdate;
-        if (gonetConnectionManager != null)
-            gonetConnectionManager.OnConnectionSuccess -= OnGONetConnected;
+        if (GONetConnectionManager != null)
+            GONetConnectionManager.OnConnectionSuccess -= OnGONetConnected;
     }
 
     /// <summary>
@@ -75,8 +77,8 @@ public class NetworkManager : MonoBehaviour, IOrderedScript
         if (!isHost)
             preset.ipAddress = hostSteamId;
 
-        gonetConnectionManager.CurrentPreset = preset;
-        gonetConnectionManager.Connect();
+        GONetConnectionManager.CurrentPreset = preset;
+        GONetConnectionManager.Connect();
     }
 
     // Fires when GONet reports a successful connection.
@@ -90,5 +92,29 @@ public class NetworkManager : MonoBehaviour, IOrderedScript
                 LoadSceneMode.Single
             );
         }
+    }
+
+    public static void DisconnectGONet()
+    {
+        Instance.GONetConnectionManager.Disconnect();
+
+        GONetMain.GONetClient?.Disconnect();
+        GONetMain.gonetServer?.Stop();
+
+        if (GONetMain.Global != null)
+        {
+            var go = GONetMain.Global.gameObject;
+            go.SetActive(false);
+            Destroy(go);
+        }
+
+        if (GONetMain.MyLocal != null)
+        {
+            var go = GONetMain.MyLocal.gameObject;
+            go.SetActive(false);
+            Destroy(go);
+        }
+
+        GONetMain.ResetForNewSession();
     }
 }

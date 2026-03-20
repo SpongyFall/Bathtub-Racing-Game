@@ -1,7 +1,6 @@
 ﻿using GONet;
 using UnityEngine;
 using System.Collections;
-using TMPro;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(Collider))]
@@ -56,8 +55,9 @@ public class PlayerKartController : MonoBehaviour
     [Header("Stabilization Settings")]
     public float groundForce = 50f;
 
+    [System.NonSerialized] public Rigidbody rb;
+
     private GONetParticipant gonetParticipant;
-    private Rigidbody rb;
     private Collider col;
 
     private float moveInput;

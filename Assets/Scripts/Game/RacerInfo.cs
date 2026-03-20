@@ -7,25 +7,25 @@ public class RacerInfo : MonoBehaviour
 {
     [Header("Identity")]
     public string racerName = "Racer";
-    public bool isPlayer = false;
+    public bool isClientPlayer = false;
 
     [Header("Race Progress")]
     [Tooltip("Current completed laps. 0-based index.")]
-    [GONetAutoMagicalSync]
+    //[GONetAutoMagicalSync]
     public int currentLap = 0;
 
     [Tooltip("Total number of laps in this race.")]
     public int totalLaps = 3;
 
     [Tooltip("Current active waypoint index.")]
-    [GONetAutoMagicalSync]
+    //[GONetAutoMagicalSync]
     public int currentWaypoint = 0;
 
     [Tooltip("Distance to the upcoming waypoint.")]
-    [GONetAutoMagicalSync(Reliability = AutoMagicalSyncReliability.Unreliable, ShouldBlendBetweenValuesReceived = true)]
+    //[GONetAutoMagicalSync(Reliability = AutoMagicalSyncReliability.Unreliable, ShouldBlendBetweenValuesReceived = true)]
     public float distanceToNext = 0f;
 
-    [GONetAutoMagicalSync]
+    //[GONetAutoMagicalSync]
     public bool hasFinished = false;
 
 

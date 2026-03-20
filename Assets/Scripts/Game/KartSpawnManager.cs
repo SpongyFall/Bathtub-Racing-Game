@@ -25,9 +25,11 @@ public class KartSpawnManager : MonoBehaviour
 
     void Start()
     {
-        List<CSteamID> lobbyPlayers = SteamManager.InSteamLobby
-            ? SteamManager.GetLobbyPlayerIds()
-            : new List<CSteamID>();
+    }
+
+    public void SpawnKart()
+    {
+        List<CSteamID> lobbyPlayers = SteamManager.GetLobbyPlayerIds();
 
         int playerCount = lobbyPlayers.Count > 0 ? lobbyPlayers.Count : 1;
 
@@ -42,23 +44,34 @@ public class KartSpawnManager : MonoBehaviour
             return;
         }
 
-        if (GONetMain.IsServer)
+
+        // Client: find this player's lobby index and spawn a remotely-controlled kart.
+        CSteamID localId = SteamManager.LocalSteamId;
+        int myIndex = lobbyPlayers.IndexOf(localId);
+        if (myIndex < 0)
         {
-            // Host: server-owned kart at slot 0. IsMine = true on this machine.
-            SpawnServerKart(0);
+            Debug.LogError("[KartSpawnManager] Local SteamID not found in lobby member list. Defaulting to slot 0.");
+            myIndex = 0;
         }
-        else if (GONetMain.IsClient)
-        {
-            // Client: find this player's lobby index and spawn a remotely-controlled kart.
-            CSteamID localId = SteamManager.LocalSteamId;
-            int myIndex = lobbyPlayers.IndexOf(localId);
-            if (myIndex < 0)
-            {
-                Debug.LogError("[KartSpawnManager] Local SteamID not found in lobby member list. Defaulting to slot 1.");
-                myIndex = 1;
-            }
-            SpawnClientKart(myIndex);
-        }
+        SpawnServerKart(myIndex);
+
+        //if (GONetMain.IsServer)
+        //{
+        //    // Host: server-owned kart at slot 0. IsMine = true on this machine.
+        //    SpawnServerKart(0);
+        //}
+        //else if (GONetMain.IsClient)
+        //{
+        //    // Client: find this player's lobby index and spawn a remotely-controlled kart.
+        //    CSteamID localId = SteamManager.LocalSteamId;
+        //    int myIndex = lobbyPlayers.IndexOf(localId);
+        //    if (myIndex < 0)
+        //    {
+        //        Debug.LogError("[KartSpawnManager] Local SteamID not found in lobby member list. Defaulting to slot 0.");
+        //        myIndex = 0;
+        //    }
+        //    SpawnClientKart(myIndex);
+        //}
     }
 
     void SpawnServerKart(int slotIndex)

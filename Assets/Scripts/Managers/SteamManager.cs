@@ -463,7 +463,8 @@ public class SteamManager : MonoBehaviour, IOrderedScript
         }
     }
 
-    /// <returns>Empty list if not in a lobby.</returns>
+    /// <returns>Empty list if not in a lobby. Is sorted by Steam ID (meaning you can reliably use the player index as an ID, 
+    /// although each player's index may change.</returns>
     public static List<CSteamID> GetLobbyPlayerIds()
     {
         List<CSteamID> playerIds = new();
@@ -472,6 +473,9 @@ public class SteamManager : MonoBehaviour, IOrderedScript
 
         for (int i = 0; i < SteamMatchmaking.GetNumLobbyMembers(LobbyId.Value); i++)
             playerIds.Add(SteamMatchmaking.GetLobbyMemberByIndex(LobbyId.Value, i));
+
+        //Deterministic ordering, sorts players by steam ID.
+        playerIds.Sort((x, y) => x.m_SteamID.CompareTo(y.m_SteamID));
         return playerIds;
     }
 

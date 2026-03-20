@@ -55,11 +55,12 @@ public class RacePositionManager : MonoBehaviour
     /// Updates the player’s on-screen race position text.
     private void UpdatePositionDisplay()
     {
-        RacerInfo player = racers.FirstOrDefault(r => r.isPlayer);
+        RacerInfo player = racers.FirstOrDefault(r => r.isClientPlayer);
 
         if (player == null)
         {
-            Debug.LogError("RacePositionManager: Player not found in racer list.");
+            positionText.text = $"Place: ? / {racers.Count}";
+            //Debug.LogError("RacePositionManager: Player not found in racer list.");
             return;
         }
 

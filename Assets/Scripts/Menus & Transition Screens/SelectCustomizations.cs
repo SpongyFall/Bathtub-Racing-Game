@@ -1,11 +1,13 @@
-using EasyRoads3Dv3;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 
 public class SelectCustomizations : MonoBehaviour
 {
+    public const string SelectedKartNameKey = "SelectedKartName";
+
     // Live update objects
     public GameObject kart;
     public GameObject wheels;
@@ -34,10 +36,19 @@ public class SelectCustomizations : MonoBehaviour
     public TMP_InputField kartNameInput;
     public TMP_InputField driverNameInput;
 
-    void Start()
+    void Awake()
     {
         _customKart = new CustomKart();
         UpdateLapDisplayDefaults();
+    }
+    void OnEnable()
+    {
+        LoadSelectedKart();
+    }
+    void Start()
+    {
+        //_customKart = new CustomKart();
+        //UpdateLapDisplayDefaults();
     }
 
     // Methods for setting parts
@@ -124,13 +135,27 @@ public class SelectCustomizations : MonoBehaviour
         KartSaveManager.SaveKart(_customKart);
 
         // Tell the race scene which kart to load
-        PlayerPrefs.SetString("SelectedKartName", _customKart.KartName);
+        PlayerPrefs.SetString(SelectedKartNameKey, _customKart.KartName);
         PlayerPrefs.Save();
 
         Debug.Log("Kart saved and selected: " + _customKart.KartName);
     }
 
 
+    public void LoadSelectedKart()
+    {
+        if (PlayerPrefs.HasKey(SelectedKartNameKey))
+        {
+            var selectedName = PlayerPrefs.GetString(SelectedKartNameKey);
+            var karts = KartSaveManager.LoadKarts().ToList();
+            var selected = karts.Find(x => x.KartName == selectedName);
+
+            if (selected != null)
+                _customKart = selected;
+        }
+
+        LoadKart(_customKart);
+    }
     public void LoadKart(CustomKart kartData)
     {
         if (wheels != null) Destroy(wheels.gameObject);

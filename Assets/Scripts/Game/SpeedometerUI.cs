@@ -6,55 +6,34 @@ using TMPro;
 
 public class SpeedometerUI : MonoBehaviour
 {
-    [Header("References")]
-    [Tooltip("Rigidbody of the player kart. Auto-assigned if left empty.")]
-    public Rigidbody playerRB;
+    //[Header("References")]
 
     [Tooltip("UI text field where speed will be displayed.")]
     public TMP_Text speedText;
 
-    private const float ToMPH = 2.23694f;
+    NetworkedKart clientKart => RaceManager.Instance.ClientKart;
 
-    void Start()
-    {
-        AssignPlayerRigidbody();
-    }
+    const float ToMPH = 2.23694f;
 
     void Update()
     {
-        // Safeguard: reattempt auto-assignment if lost (scene reload, prefab spawn, etc.)
-        if (playerRB == null)
-            AssignPlayerRigidbody();
-
-        if (playerRB == null || speedText == null)
+        if (clientKart == null || speedText == null)
             return;
 
         UpdateSpeedometer();
     }
 
-
-    /// Attempts to automatically find and cache the player's Rigidbody.
-    private void AssignPlayerRigidbody()
-    {
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-
-        if (player != null)
-            playerRB = player.GetComponent<Rigidbody>();
-    }
-
-
     /// Computes and updates the speed text display.
     private void UpdateSpeedometer()
     {
-        float speedMPH = playerRB.velocity.magnitude * ToMPH;
+        float speedMPH = clientKart.Rigid.velocity.magnitude * ToMPH;
         speedText.text = speedMPH.ToString("000");
     }
-        public void UpdateSpeedometerFromVelocity(Vector3 velocity)
+    public void UpdateSpeedometerFromVelocity(Vector3 velocity)
     {
         float speedMPH = velocity.magnitude * ToMPH;
         speedText.text = speedMPH.ToString("000");
     }
-
 }
 
 
