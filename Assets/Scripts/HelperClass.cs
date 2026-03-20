@@ -7,6 +7,9 @@ using UnityEngine;
 public static class HelperClass
 {
     public static System.Random Rand = new(Guid.NewGuid().GetHashCode());
+    public static bool IsConnectedToInternet => Application.internetReachability == NetworkReachability.ReachableViaCarrierDataNetwork
+        || Application.internetReachability == NetworkReachability.ReachableViaLocalAreaNetwork;
+
 
     /// <returns>If the active state of the obj changed.</returns>
     public static bool SetActiveSafe(this GameObject obj, bool active)

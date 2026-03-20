@@ -42,9 +42,9 @@ public class NetworkedKart : GONetParticipantCompanionBehaviour
             RaceManager.Instance.AddNetworkedKart(this, false);
     }
 
-    public override void OnGONetParticipantStarted(GONetParticipant gonetParticipant)
+    public override void OnGONetParticipantStarted()
     {
-        base.OnGONetParticipantStarted(gonetParticipant);
+        base.OnGONetParticipantStarted();
         Debug.Log("On GONet started ");
     }
 
@@ -110,7 +110,7 @@ public class NetworkedKart : GONetParticipantCompanionBehaviour
         else
             LoadCustomKart(serializable);
     }
-    [TargetRpc]
+    [TargetRpc(RpcTarget.All)]
     void LoadCustomKart(CustomKartSerializable kartSerializable)
     {
         //Called to all players.
