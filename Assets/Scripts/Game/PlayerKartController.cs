@@ -134,13 +134,17 @@ public class PlayerKartController : MonoBehaviour
 
     void ApplyInput()
     {
-        moveInput = Input.GetAxis("Vertical");
-        turnInput = Input.GetAxis("Horizontal");
+        //moveInput = Input.GetAxis("Vertical");
+        //turnInput = Input.GetAxis("Horizontal");
+        moveInput = InputManager.PlayerMoveInput.y;
+        turnInput = InputManager.PlayerMoveInput.x;
 
-        if (Input.GetKey(KeyCode.LeftShift))
+        //if (Input.GetKey(KeyCode.LeftShift))
+        if (InputManager.DriftAction.IsPressed())
             turnInput *= driftMultiplier;
 
-        if (Input.GetKeyDown(KeyCode.Space) && !isBoosting)
+        //if (Input.GetKeyDown(KeyCode.Space) && !isBoosting)
+        if (InputManager.BoostAction.WasPressedThisFrame() && !isBoosting)
             StartCoroutine(BoostCoroutine());
     }
 
@@ -286,7 +290,7 @@ public class PlayerKartController : MonoBehaviour
     {
         if (playerCamera == null) return;
 
-        float driftTilt = Input.GetKey(KeyCode.LeftShift) ? 1.5f : 1f;
+        float driftTilt = InputManager.DriftAction.IsPressed() ? 1.5f : 1f;
         float sideTilt = -turnInput * tiltAmount * driftTilt;
 
         playerCamera.localRotation = Quaternion.Slerp(

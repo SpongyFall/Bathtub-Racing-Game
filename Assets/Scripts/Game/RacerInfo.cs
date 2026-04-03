@@ -11,21 +11,17 @@ public class RacerInfo : MonoBehaviour
 
     [Header("Race Progress")]
     [Tooltip("Current completed laps. 0-based index.")]
-    //[GONetAutoMagicalSync]
     public int currentLap = 0;
 
     [Tooltip("Total number of laps in this race.")]
     public int totalLaps = 3;
 
     [Tooltip("Current active waypoint index.")]
-    //[GONetAutoMagicalSync]
     public int currentWaypoint = 0;
 
     [Tooltip("Distance to the upcoming waypoint.")]
-    //[GONetAutoMagicalSync(Reliability = AutoMagicalSyncReliability.Unreliable, ShouldBlendBetweenValuesReceived = true)]
     public float distanceToNext = 0f;
 
-    //[GONetAutoMagicalSync]
     public bool hasFinished = false;
 
 

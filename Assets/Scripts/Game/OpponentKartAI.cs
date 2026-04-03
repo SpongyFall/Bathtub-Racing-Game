@@ -128,7 +128,6 @@ public class OpponentKartAI : MonoBehaviour
                 currentWaypoint = 0;
             }
         }
-
     }
 
     void HandleSlopeMovement()

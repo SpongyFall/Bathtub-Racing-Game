@@ -7,7 +7,7 @@ using System;
 
 public class SceneLoader : MonoBehaviour, IOrderedScript
 {
-    public event Action<SceneType, Scene, LoadSceneMode> OnSceneLoaded;
+    public static event Action<SceneType, Scene, LoadSceneMode> OnSceneLoaded;
 
     public int CallOrder => 0;
 

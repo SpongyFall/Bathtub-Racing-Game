@@ -99,6 +99,11 @@
             "location": "scene://Racetrack/Kart 4",
             "unityGuid": "",
             "codeGenerationId": 1
+        },
+        {
+            "location": "scene://Racetrack/RaceManager",
+            "unityGuid": "",
+            "codeGenerationId": 1
         }
     ]
 }

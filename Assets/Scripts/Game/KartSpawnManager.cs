@@ -45,7 +45,6 @@ public class KartSpawnManager : MonoBehaviour
             return;
         }
 
-
         // Client: find this player's lobby index and spawn a remotely-controlled kart.
         CSteamID localId = SteamManager.LocalSteamId;
         int myIndex = lobbyPlayers.IndexOf(localId);

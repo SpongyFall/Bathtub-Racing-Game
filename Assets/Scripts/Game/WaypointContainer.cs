@@ -5,6 +5,7 @@ using UnityEngine;
 public class WaypointContainer : MonoBehaviour
 {
     public List<Transform> waypoints;
+
     // Start is called before the first frame update
     void Awake()
     {

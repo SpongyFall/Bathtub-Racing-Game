@@ -8,6 +8,8 @@ using UnityEngine;
 
 public class SteamManager : MonoBehaviour, IOrderedScript
 {
+    public const string KickPlayerKey = "kickedPlayerId";
+
     public static SteamManager Instance { get; private set; }
 
     public static CSteamID LocalSteamId => SteamUser.GetSteamID();
@@ -204,6 +206,18 @@ public class SteamManager : MonoBehaviour, IOrderedScript
         }
     }
 
+    public static void KickPlayer(CSteamID steamId)
+    {
+        if (!IsLobbyOwner)
+            return;
+
+        string playerName = SteamFriends.GetFriendPersonaName(steamId);
+        Debug.Log($"Kicking player '{playerName}' from Steam lobby");
+
+        //Set a lobby data key with the kicked player's ID so they know they were kicked (since leaving is the same as being kicked from their perspective).
+        SteamMatchmaking.SetLobbyData(LobbyId.Value, KickPlayerKey, steamId.ToString());
+    }
+
     public static void RequestPlayerInfo()
     {
         if (!InSteamLobby)
@@ -277,6 +291,14 @@ public class SteamManager : MonoBehaviour, IOrderedScript
     static void LobbyDataUpdate(LobbyDataUpdate_t info)
     {
         OnLobbyDataUpdate.InvokeSafe(nameof(OnLobbyDataUpdate), info);
+
+        //If we were kicked, leave lobby.
+        string kickedPlayerId = SteamMatchmaking.GetLobbyData(LobbyId.Value, "kickedPlayerId");
+        if (kickedPlayerId == LocalSteamId.ToString())
+        {
+            Debug.Log("We were kicked from the Steam Lobby!");
+            LeaveLobby();
+        }
     }
 
     /// <summary>
@@ -477,6 +499,11 @@ public class SteamManager : MonoBehaviour, IOrderedScript
         //Deterministic ordering, sorts players by steam ID.
         playerIds.Sort((x, y) => x.m_SteamID.CompareTo(y.m_SteamID));
         return playerIds;
+    }
+    /// <returns>1 if not in a lobby.</returns>
+    public static int GetLobbyPlayerCount()
+    {
+        return InSteamLobby ? SteamMatchmaking.GetNumLobbyMembers(LobbyId.Value) : 1;
     }
 
     public static CSteamID GetLobbyOwnerId()

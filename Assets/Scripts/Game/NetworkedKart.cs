@@ -1,6 +1,7 @@
 using GONet;
 using Steamworks;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 
 /// <summary>
@@ -12,7 +13,9 @@ public class NetworkedKart : GONetParticipantCompanionBehaviour
 {
     public PlayerKartController Controller;
     public RacerInfo RacerInfo;
-    public GameObject CameraObj;
+    public Camera Camera;
+    public Canvas WorldCanvas;
+    public TextMeshProUGUI RacerName;
     [Space]
     [Header("Runtime Set Properties")]
     //Meant to be synced but GONet was getting compile errors during code generation using this property.
@@ -34,6 +37,12 @@ public class NetworkedKart : GONetParticipantCompanionBehaviour
         }
     }
 
+    void Update()
+    {
+        if (WorldCanvas.gameObject.activeSelf)
+            WorldCanvas.transform.rotation = Quaternion.LookRotation(WorldCanvas.transform.position - RaceManager.Instance.MainCamera.transform.position);
+    }
+
     protected override void OnDestroy()
     {
         base.OnDestroy();
@@ -42,26 +51,25 @@ public class NetworkedKart : GONetParticipantCompanionBehaviour
             RaceManager.Instance.AddNetworkedKart(this, false);
     }
 
-    public override void OnGONetParticipantStarted()
-    {
-        base.OnGONetParticipantStarted();
-        Debug.Log("On GONet started ");
-    }
-
     public override void OnGONetReady()
     {
         base.OnGONetReady();
-        Debug.Log("On GONet ready");
+        Debug.Log($"On GONet ready for Kart index: {RaceManager.Instance.NetworkedKarts.IndexOf(this)}");
 
         //Called when this participant as well as GONet is ready and networked.
         Setup();
     }
+    public override void OnGONetParticipantStarted()
+    {
+        base.OnGONetParticipantStarted();
+    }
 
     public void Setup()
     {
-        Debug.Log($"Setting up networked cart", gameObject);
         bool inMultiplayer = NetworkManager.IsConnectedGONet;
-     
+        int kartIndex = RaceManager.Instance.NetworkedKarts.IndexOf(this);
+        Debug.Log($"NetworkedKart index {kartIndex} SetUp, IsMine: {IsMine}, in multiplayer: {inMultiplayer}", gameObject);
+
         if (!inMultiplayer || IsMine)
         {
             OwnerSteamId = SteamManager.LocalSteamId.m_SteamID;
@@ -69,14 +77,15 @@ public class NetworkedKart : GONetParticipantCompanionBehaviour
         }
 
         //Enable camera.
-        CameraObj.SetActiveSafe(!inMultiplayer || gonetParticipant.IsLocallyControlled);
+        Camera.gameObject.SetActiveSafe(!inMultiplayer || gonetParticipant.IsLocallyControlled);
         RacerInfo.isClientPlayer = !inMultiplayer || IsMine;
         Controller.rb.isKinematic = inMultiplayer && !IsMine;
+        WorldCanvas.gameObject.SetActiveSafe(!IsMine);
 
         if (!inMultiplayer || IsMine)
         {
             //Load kart skin.
-            RPCLoadCustomKart();
+            //RPCLoadCustomKart();
         }
 
         //Refresh racers.
@@ -86,6 +95,28 @@ public class NetworkedKart : GONetParticipantCompanionBehaviour
             rpm.RefreshRacers();
             Debug.Log("REFRESH after player kart spawn");
         }
+
+        //RPC to all the owner's Steam ID.
+        if (IsMine)
+            CallRpc(nameof(RPCSetup), OwnerSteamId);
+    }
+    [TargetRpc(RpcTarget.All)]
+    public void RPCSetup(ulong ownerId)
+    {
+        //Called to all from owner.
+        OwnerSteamId = ownerId;
+        var steamId = new CSteamID(ownerId);
+
+        //Link auth and Steam ID.
+        RaceManager.Instance.LinkAuthToSteamId(GONetParticipant.OwnerAuthorityId, steamId);
+
+        //Set name.
+        string playerName = SteamFriends.GetFriendPersonaName(steamId);
+        RacerName.text = playerName;
+        name = playerName;
+
+        //Tell manager we are ready.
+        RaceManager.Instance.KartReady(this);
     }
 
     /// <summary>
@@ -110,7 +141,7 @@ public class NetworkedKart : GONetParticipantCompanionBehaviour
         else
             LoadCustomKart(serializable);
     }
-    [TargetRpc(RpcTarget.All)]
+    //[TargetRpc(RpcTarget.All)]
     void LoadCustomKart(CustomKartSerializable kartSerializable)
     {
         //Called to all players.

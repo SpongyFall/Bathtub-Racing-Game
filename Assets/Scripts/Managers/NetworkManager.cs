@@ -1,4 +1,5 @@
 using GONet;
+using GONet.Transport;
 using Steamworks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -41,11 +42,17 @@ public class NetworkManager : MonoBehaviour, IOrderedScript
     /// </summary>
     public void StartGame()
     {
-        // Broadcast host SteamID and state so clients can connect.
-        SteamMatchmaking.SetLobbyData(SteamManager.LobbyId.Value, "hostSteamId", SteamManager.LocalSteamId.ToString());
-        SteamMatchmaking.SetLobbyData(SteamManager.LobbyId.Value, "state", "starting");
+        bool inSteamLobby = SteamManager.InSteamLobby;
 
-        ConnectGONet(isHost: true, hostSteamId: null);
+        if (inSteamLobby)
+        {
+            // Broadcast host SteamID and state so clients can connect.
+            SteamMatchmaking.SetLobbyData(SteamManager.LobbyId.Value, "hostSteamId", SteamManager.LocalSteamId.ToString());
+            SteamMatchmaking.SetLobbyData(SteamManager.LobbyId.Value, "state", "starting");
+        }
+
+        //If we're not in a steam lobby, start game offline.
+        ConnectGONet(offline: !inSteamLobby, isHost: true, hostSteamId: null);
     }
 
     // Clients receive this when lobby metadata changes.
@@ -59,23 +66,29 @@ public class NetworkManager : MonoBehaviour, IOrderedScript
         if (state == "starting")
         {
             string hostSteamId = SteamMatchmaking.GetLobbyData(SteamManager.LobbyId.Value, "hostSteamId");
-            ConnectGONet(isHost: false, hostSteamId: hostSteamId);
+            ConnectGONet(offline: false, isHost: false, hostSteamId: hostSteamId);
         }
     }
 
-    void ConnectGONet(bool isHost, string hostSteamId)
+    void ConnectGONet(bool offline, bool isHost, string hostSteamId)
     {
         // GONetConnectionPreset is a ScriptableObject — use CreateInstance at runtime.
         var preset = ScriptableObject.CreateInstance<GONetConnectionPreset>();
-        preset.role = isHost ? GONetConnectionRole.Host : GONetConnectionRole.Client;
-        preset.usePluggableTransport = true;
-        preset.transportType = GONetTransportType.Steamworks;
-        preset.maxConnections = RaceManager.MaxPlayers;
 
+        //If offline, we host.
+        preset.role = offline || isHost ? GONetConnectionRole.Host : GONetConnectionRole.Client;
         // For clients, ipAddress is the host's SteamID string — SteamworksTransport
         // converts this to a SteamNetworkingIdentity for the P2P connection.
         if (!isHost)
             preset.ipAddress = hostSteamId;
+
+        //Offline mode can't use Steam transport.
+        bool useSteamTransport = !offline;
+        preset.usePluggableTransport = useSteamTransport;
+        if (useSteamTransport)
+            preset.transportType = GONetTransportType.Steamworks;
+        
+        preset.maxConnections = RaceManager.MaxPlayers;
 
         GONetConnectionManager.CurrentPreset = preset;
         GONetConnectionManager.Connect();
@@ -92,6 +105,29 @@ public class NetworkManager : MonoBehaviour, IOrderedScript
                 LoadSceneMode.Single
             );
         }
+    }
+
+    /// <summary>
+    /// Kicks the GONet player as well as calls the SteamManager's KickPlayer.
+    /// </summary>
+    public static void KickGONetPlayer(ushort authorityId, CSteamID steamId)
+    {
+        if (!IsConnectedGONet || !GONetMain.IsServer)
+            return;
+
+        string playerName = SteamFriends.GetFriendPersonaName(steamId);
+        Debug.Log($"Kicking GONet player '{playerName}' with authority ID {authorityId}");
+
+        var server = GONetMain.gonetServer;
+        if (server.TryGetRemoteClientByAuthorityId(authorityId, out var remote))
+        {
+            var uid = remote.ConnectionToClient.InitiatingClientConnectionUID;
+
+            //Disconnect via GONet transport.
+            server.TryDisconnectClientByConnectionUID(uid, GONetTransportDisconnectReason.Kicked, "host-kick");
+        }
+
+        SteamManager.KickPlayer(steamId);
     }
 
     public static void DisconnectGONet()

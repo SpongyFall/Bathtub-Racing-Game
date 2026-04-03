@@ -18,7 +18,8 @@ public class Pause : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Escape))
+        //if (Input.GetKeyDown(KeyCode.Escape))
+        if (InputManager.InputActions.UI.Menu.WasPressedThisFrame())
             TogglePause();
     }
 

@@ -8,6 +8,9 @@ using System;
 
 public class LobbyUI : MonoBehaviour, IOrderedScript
 {
+    public Button CopyCodeBtn;
+    public TextMeshProUGUI CopyCodeBtnText;
+    [Space]
     public Button InviteBtn;
     public Button StartBtn;
     public Button LeaveBtn;
@@ -28,8 +31,14 @@ public class LobbyUI : MonoBehaviour, IOrderedScript
 
     public int CallOrder => 0;
 
+    string originCopyCodeBtnText;
+    Coroutine showCodeCor = null;
+
     void Awake()
     {
+        CopyCodeBtn.onClick.AddListener(OnCopyCodeClick);
+        originCopyCodeBtnText = CopyCodeBtnText.text;
+
         InviteBtn.onClick.AddListener(OnInviteClick);
         StartBtn.onClick.AddListener(OnStartClick);
         LeaveBtn.onClick.AddListener(OnLeaveClick);
@@ -50,6 +59,13 @@ public class LobbyUI : MonoBehaviour, IOrderedScript
 
     public void OrderedStart()
     {
+    }
+
+    void OnDisable()
+    {
+        //Incase we disable before the ShowCodeCor ends, reset the btn text and clear the cor.
+        CopyCodeBtnText.text = originCopyCodeBtnText;
+        showCodeCor = null;
     }
 
     void OnDestroy()
@@ -123,10 +139,42 @@ public class LobbyUI : MonoBehaviour, IOrderedScript
         }
     }
 
+    void OnCopyCodeClick()
+    {
+        var codeStr = SteamManager.LobbyId.Value.ToString();
+        GUIUtility.systemCopyBuffer = codeStr;
+
+        if (showCodeCor != null)
+        {
+            StopCoroutine(showCodeCor);
+            showCodeCor = null;
+        }
+        showCodeCor = StartCoroutine(ShowCodeCor());
+    }
+    IEnumerator ShowCodeCor()
+    {
+        //When the copy code btn is clicked, change the text of the copy code btn to the room's code until the mouse
+        //moves off the btn.
+        string newCodeBtnText = $"Copied!\n Code: {SteamManager.LobbyId.Value}";
+
+        //As long as we are hovering over the copy code btn, keep showing the code.
+        var firstRaycast = MainMenuManager.Instance.FirstMouseRaycast;
+        while (firstRaycast != null && firstRaycast.Value.gameObject.GetComponentInParent<Button>() == CopyCodeBtn)
+        {
+            CopyCodeBtnText.text = newCodeBtnText;
+            yield return null;
+        }
+
+        //Reset text and clear cor.
+        CopyCodeBtnText.text = originCopyCodeBtnText;
+        showCodeCor = null;
+        Debug.Log("Show code cor end");
+    }
     void OnInviteClick()
     {
         SteamFriends.ActivateGameOverlayInviteDialog(SteamManager.LobbyId.Value);
     }
+
     void OnStartClick()
     {
         NetworkManager.Instance.StartGame();
