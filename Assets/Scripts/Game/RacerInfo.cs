@@ -29,24 +29,18 @@ public class RacerInfo : MonoBehaviour
     public WaypointContainer waypointContainer { get; private set; }
 
     private GONetParticipant gonetParticipant;
-    private OpponentKartAI ai;
     private Transform tr;
 
     void Awake()
     {
         gonetParticipant = GetComponent<GONetParticipant>();
         tr = transform;
-        ai = GetComponent<OpponentKartAI>();
 
         // Auto-grab existing waypoint container in scene
         waypointContainer = FindFirstObjectByType<WaypointContainer>();
 
         // Load lap count chosen at track selection menu
         totalLaps = PlayerPrefs.GetInt("SelectedLapCount", totalLaps);
-
-        // AI overrides waypointContainer if it uses a specific path
-        if (ai != null)
-            waypointContainer = ai.waypointContainer;
 
         if (waypointContainer == null)
             Debug.LogError("RacerInfo: No WaypointContainer found in the scene.");
@@ -73,22 +67,12 @@ public class RacerInfo : MonoBehaviour
     }
 
 
-    // Updates the current waypoint index and distance.
-    // AI uses its own internal waypoint index; player uses nearest waypoint detection.
-
+    // Updates the current waypoint index and distance using nearest-waypoint search.
+    // Works for both player and AI karts.
     private void UpdateWaypointProgress()
     {
         var list = waypointContainer.waypoints;
 
-        // AI progression index
-        if (ai != null)
-        {
-            currentWaypoint = Mathf.Clamp(ai.currentWaypoint, 0, list.Count - 1);
-            distanceToNext = Vector3.Distance(tr.position, list[currentWaypoint].position);
-            return;
-        }
-
-        // Player: find nearest waypoint
         int bestIndex = 0;
         float closestDist = float.MaxValue;
 
