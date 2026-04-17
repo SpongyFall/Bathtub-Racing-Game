@@ -18,6 +18,7 @@ public class NetworkedKart : GONetParticipantCompanionBehaviour
     public Canvas WorldCanvas;
     public TextMeshProUGUI RacerName;
     public QuickOutline Outline;
+    public KartModel KartModel;
     [Space]
     [Header("Runtime Set Properties")]
     //Meant to be synced but GONet was getting compile errors during code generation using this property.
@@ -89,24 +90,25 @@ public class NetworkedKart : GONetParticipantCompanionBehaviour
         WorldCanvas.gameObject.SetActiveSafe(!IsMine);
         Outline.enabled = !IsMine;
 
-        if (!inMultiplayer || IsMine)
+        if (IsMine)
         {
-            //Load kart skin.
-            //RPCLoadCustomKart();
+            //Load kart saved kart skin, will be RPCed in the Ready func.
+            var loadedData = KartSaveManager.LoadKartData();
+            KartModel.ApplyKartData(loadedData);
         }
+        //Disable view blocking objs when being controlled.
+        KartModel.EnableViewBlockingObjs(!IsMine);
 
         SetupComplete = true;
-        //RPC to all the owner's Steam ID.
-        //if (IsMine)
-        //    CallRpc(nameof(RPCSetup), OwnerSteamId);
     }
 
     public void RPCReady()
     {
-        CallRpc(nameof(Ready), OwnerSteamId);
+        var kartDataBytes = HelperClass.Serialize(KartModel.KartData);
+        CallRpc(nameof(Ready), OwnerSteamId, kartDataBytes);
     }
     [TargetRpc(RpcTarget.All)]
-    public void Ready(ulong ownerId)
+    public void Ready(ulong ownerId, byte[] customKartDataBytes)
     {
         //Called to all from owner.
         OwnerSteamId = ownerId;
@@ -119,52 +121,14 @@ public class NetworkedKart : GONetParticipantCompanionBehaviour
         string playerName = SteamFriends.GetFriendPersonaName(steamId);
         RacerName.text = playerName;
         name = playerName;
+        //Load skin.
+        var kartData = HelperClass.Deserialize<CustomKartData>(customKartDataBytes);
+        if (kartData != null)
+            KartModel.ApplyKartData(kartData);
+        else
+            Debug.LogError($"Failed to deserialize {nameof(CustomKartData)} for kart: '{name}'!", gameObject);
 
         //Tell manager we are ready.
         RaceManager.Instance.KartReady(this);
-    }
-
-    /// <summary>
-    /// Loads the client's selected kart skins and RPCs to all players to display it.
-    /// </summary>
-    public void RPCLoadCustomKart()
-    {
-        var kartName = PlayerPrefs.GetString(SelectCustomizations.SelectedKartNameKey, "");
-        var savedKarts = KartSaveManager.LoadKarts().ToList();
-        CustomKart customKart = savedKarts.Find(x => x.KartName == kartName);
-
-        if (customKart == null)
-        {
-            Debug.Log("No custom kart to load found!");
-            return;
-        }
-        var serializable = new CustomKartSerializable(customKart);
-
-        //If multiplayer, RPC.
-        if (NetworkManager.IsConnectedGONet)
-            CallRpc(nameof(LoadCustomKart), serializable);
-        else
-            LoadCustomKart(serializable);
-    }
-    //[TargetRpc(RpcTarget.All)]
-    void LoadCustomKart(CustomKartSerializable kartSerializable)
-    {
-        //Called to all players.
-        var customKart = kartSerializable.ToCustomKart();
-
-        //Apply colors.
-        foreach (MeshRenderer renderer in GetComponentsInChildren<MeshRenderer>())
-        {
-            if (renderer.gameObject.name.Contains("Body"))
-                renderer.material.color = customKart.MainColor;
-
-            if (renderer.gameObject.name.Contains("TubCap"))
-                renderer.material.color = customKart.TrimColor;
-
-            if (renderer.gameObject.name.Contains("Decal"))
-                renderer.material.color = customKart.DecalColor;
-        }
-
-        Debug.Log($"Loaded custom kart: '{customKart.KartName}' for player ID: {OwnerSteamId}", this);
     }
 }

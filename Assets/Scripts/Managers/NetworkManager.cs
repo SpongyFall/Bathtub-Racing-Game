@@ -20,7 +20,6 @@ public class NetworkManager : MonoBehaviour, IOrderedScript
 
     public GONetConnectionManager GONetConnectionManager;
 
-    // Run after SteamManager (CallOrder 0) so lobby state is ready.
     public int CallOrder => 1;
 
     public void OrderedAwake()
@@ -175,6 +174,7 @@ public class NetworkManager : MonoBehaviour, IOrderedScript
 
     public static void DisconnectGONet()
     {
+        pendingSessionReset = true;
         Instance.GONetConnectionManager.Disconnect();
 
         GONetMain.GONetClient?.Disconnect();

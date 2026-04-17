@@ -1,7 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
+using System.Runtime.Serialization;
+using System.Text;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public static class HelperClass
@@ -10,6 +14,33 @@ public static class HelperClass
     public static bool IsConnectedToInternet => Application.internetReachability == NetworkReachability.ReachableViaCarrierDataNetwork
         || Application.internetReachability == NetworkReachability.ReachableViaLocalAreaNetwork;
 
+    public static byte[] Serialize<T>(T obj)
+    {
+        var serializer = new DataContractSerializer(typeof(T));
+        using var ms = new MemoryStream();
+        serializer.WriteObject(ms, obj);
+        return ms.ToArray();
+    }
+    public static T Deserialize<T>(byte[] data)
+    {
+        var serializer = new DataContractSerializer(typeof(T));
+        using var ms = new MemoryStream(data);
+        return (T)serializer.ReadObject(ms);
+    }
+
+    public static string SpaceUppercases(this string str)
+    {
+        string result = "";
+        for (int i = 0; i < str.Length; i++)
+        {
+            if (i > 0 && char.IsUpper(str[i]))
+                result += " ";
+
+            result += str[i];
+        }
+
+        return result;
+    }
 
     /// <returns>If the active state of the obj changed.</returns>
     public static bool SetActiveSafe(this GameObject obj, bool active)

@@ -13,6 +13,8 @@ public class RaceManager : GONetParticipantCompanionBehaviour
 
     public static RaceManager Instance { get; private set; }
 
+    public static List<Billboard> Billboards = new();
+
     public WaypointContainer WaypointContainer;
     public SplineContainer TrackSpline;
     public CountdownManager CountdownManager;
@@ -68,6 +70,8 @@ public class RaceManager : GONetParticipantCompanionBehaviour
     void Update()
     {
         SortRacers();
+
+        RotateBillboards();
     }
 
     IEnumerator SpawnKartNextFrame()
@@ -261,6 +265,34 @@ public class RaceManager : GONetParticipantCompanionBehaviour
         return RacerInfos.IndexOf(info) + 1;
     }
 
+    void RotateBillboards()
+    {
+        //if (cam == null || !cam.gameObject.activeInHierarchy)
+        //{
+        //    Camera mainCam = Camera.main;
+        //    if (mainCam != null)
+        //        cam = mainCam.transform;
+        //    else
+        //        return;
+        //}
+
+        //Just follow the camera's rotation.
+        var cam = MainCamera;
+        if (cam == null)
+            return;
+
+        Vector3 rotation = cam.transform.eulerAngles;
+        rotation.x = 0;
+        rotation.z = 0;
+
+        for (int i = 0; i < Billboards.Count; i++)
+        {
+            var billboard = Billboards[i];
+            if (billboard)
+                billboard.transform.eulerAngles = rotation;
+        }
+    }
+
     public void CheckEndConditions()
     {
         //Only check to end if race is active, and we are the server.
@@ -365,13 +397,9 @@ public class RaceManager : GONetParticipantCompanionBehaviour
 
     public void LeaveGame(bool stayInSteamLobby)
     {
-        NetworkManager.pendingSessionReset = true;
         NetworkManager.DisconnectGONet();
         if (!stayInSteamLobby)
             SteamManager.LeaveLobby();
-
-        //On client disconnect will send you to the main menu.
-        //SceneLoader.LoadScene(SceneType.MainMenu);
     }
 }
 

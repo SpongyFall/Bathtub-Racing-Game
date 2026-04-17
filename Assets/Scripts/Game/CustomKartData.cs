@@ -2,19 +2,21 @@ using System;
 using UnityEngine;
 
 [System.Serializable]
-public class CustomKart
+public class CustomKartData
 {
+    //public string KartName;
+    //public string DriverName;
+
     public RollCageType RollCage;
     public WheelType Wheel;
     public ExtraDetailType ExtraDetail;
     public DecalType Decal;
-    public string KartName;
-    public string DriverName;
-    public Color MainColor;
-    public Color TrimColor;
-    public Color DecalColor;
 
-    public CustomKart() { }
+    public Color MainColor = new(0.8867924f, 0.8867924f, 0.8867924f); //Default almost white.
+    public Color TrimColor = new(0.5943396f, 0.5943396f, 0.5943396f); //Default gray, far right option.
+    public Color DecalColor = Color.white;
+
+    public CustomKartData() { }
 }
 
 // Enums for customization
@@ -39,5 +41,8 @@ public enum ExtraDetailType
 [Serializable]
 public enum DecalType
 {
-    None = 0, Stripes = 1, Flames = 2
+    BathtopRacingAssociation    = 0, 
+    ForTheWin                   = 1, 
+    LeverSoaps                  = 2,
+    Geometric                   = 3,
 }
