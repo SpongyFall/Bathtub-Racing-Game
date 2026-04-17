@@ -14,9 +14,11 @@ public class MainMenuManager : MonoBehaviour, IOrderedScript, ICancelHandler
     public Canvas MainMenuCanvas;
     public GraphicRaycaster MainMenuRaycaster;
     [Space]
+    public GameObject BackgroundParticleSystem;
     public GameObject MainMenuPanel;
     public GameObject JoiningRandomPanel;
     public LobbyUI LobbyUI;
+    public TrackSelectionManager TrackSelection;
     [Space]
     public Button SingleplayerBtn;
     public Button MultiplayerBtn;
@@ -77,6 +79,9 @@ public class MainMenuManager : MonoBehaviour, IOrderedScript, ICancelHandler
         Instance = this;
 
         ShowPanel(MainMenuPanel, true);
+        //If we're in a Steam lobby, show lobby UI.
+        if (SteamManager.InSteamLobby)
+            LobbyUI.ShowCurrentLobby();
     }
     public void OrderedStart()
     {
@@ -125,6 +130,9 @@ public class MainMenuManager : MonoBehaviour, IOrderedScript, ICancelHandler
             //Add and enable new.
             ActivePanels.Add(panel);
             panel.SetActiveSafe(true);
+
+            //If it's the track selection, disable the map background particle system.
+            BackgroundParticleSystem.SetActiveSafe(panel != TrackSelection.gameObject);
         }
         else if (!show && ActivePanels.Contains(panel))
         {
@@ -137,10 +145,15 @@ public class MainMenuManager : MonoBehaviour, IOrderedScript, ICancelHandler
                 ActivePanels[^1].SetActiveSafe(true);
         }
     }
+    public void ShowTrackSelection(bool show, GameObject parentPanel = null)
+    {
+        ShowPanel(TrackSelection.gameObject, show, parentPanel);
+    }
 
     void OnSingleplayerClick()
     {
-        NetworkManager.Instance.StartGame();
+        ShowTrackSelection(MainMenuPanel);
+        //NetworkManager.Instance.StartGame();
     }
     void OnMultiplayerClick()
     {

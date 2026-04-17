@@ -13,7 +13,6 @@ GameObject:
   - component: {fileID: 134607261817405668}
   - component: {fileID: 5008403567015542529}
   - component: {fileID: 4464357288559142212}
-  - component: {fileID: 8799310760701345389}
   - component: {fileID: 8465833526961397667}
   - component: {fileID: 3694301321432788931}
   m_Layer: 0
@@ -142,21 +141,9 @@ MonoBehaviour:
   isClientPlayer: 0
   currentLap: 0
   totalLaps: 3
-  currentWaypoint: 0
-  distanceToNext: 0
+  CurrentWaypoint: 0
+  DistanceToNext: 0
   hasFinished: 0
---- !u!114 &8799310760701345389
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 186365577445703445}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 01da5ea5febf9064499e272618587d5c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &8465833526961397667
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -199,8 +186,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isTickReceiver: 0
+  Controller: {fileID: 0}
   RacerInfo: {fileID: 4464357288559142212}
-  PlayerCamera: {fileID: 4684951319544624098}
+  Camera: {fileID: 0}
+  WorldCanvas: {fileID: 0}
+  RacerName: {fileID: 0}
   OwnerSteamId: 0
 --- !u!1 &486573868500305851
 GameObject:

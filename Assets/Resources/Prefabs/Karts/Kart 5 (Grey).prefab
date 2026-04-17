@@ -272,6 +272,7 @@ GameObject:
   - component: {fileID: 5743474538552411622}
   - component: {fileID: 7779416609973596637}
   - component: {fileID: -1081486052379665876}
+  - component: {fileID: 1449190196156038486}
   m_Layer: 0
   m_Name: Kart 5 (Grey)
   m_TagString: AI
@@ -368,12 +369,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da7bd42f68a3cf241aab33bb3c22e86b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  waypointContainer: {fileID: 0}
-  waypoints: []
-  currentWaypoint: 0
-  waypointRange: 10
+  trackSpline: {fileID: 0}
+  lookAheadDistance: 15
+  speedLookAheadScale: 0.5
   acceleration: 25
   maxSpeed: 20
+  curvatureBrakeStrength: 5
+  minCurveSpeed: 6
   slopeFactor: 1
   groundForce: 50
   AIWeight: 0
@@ -408,6 +410,24 @@ MonoBehaviour:
   wasInstantiatedForce: 0
   myRigidBody: {fileID: 0}
   myRigidBody2D: {fileID: 0}
+--- !u!114 &1449190196156038486
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 997416880795524121}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fea29bb7c508c244a1f805a5fd3fc4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  outlineMode: 0
+  outlineColor: {r: 1, g: 1, b: 1, a: 1}
+  outlineWidth: 5
+  precomputeOutline: 0
+  bakeKeys: []
+  bakeValues: []
 --- !u!1 &1534838958376480559
 GameObject:
   m_ObjectHideFlags: 0

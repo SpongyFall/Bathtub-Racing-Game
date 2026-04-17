@@ -49,14 +49,6 @@ public class KartLoader : MonoBehaviour
         {
             Debug.LogWarning("No saved kart found — using default.");
         }
-
-        // ONLY NOW refresh racers
-        var rpm = FindFirstObjectByType<RacePositionManager>();
-        if (rpm != null)
-        {
-            rpm.RefreshRacers();
-            Debug.Log("REFRESH after player kart spawn");
-        }
     }
 }
 

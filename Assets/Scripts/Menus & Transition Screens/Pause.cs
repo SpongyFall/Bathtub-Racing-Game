@@ -19,7 +19,7 @@ public class Pause : MonoBehaviour
     void Update()
     {
         //if (Input.GetKeyDown(KeyCode.Escape))
-        if (InputManager.InputActions.UI.Menu.WasPressedThisFrame())
+        if (InputManager.InputActions.UI.Menu.WasPressedThisFrame() && !RaceManager.Instance.GameUI.RaceEndPanel.gameObject.activeInHierarchy)
             TogglePause();
     }
 

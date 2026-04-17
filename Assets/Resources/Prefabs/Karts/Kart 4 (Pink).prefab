@@ -949,6 +949,7 @@ GameObject:
   - component: {fileID: -7897459385093019909}
   - component: {fileID: 5596934650344409478}
   - component: {fileID: 4875098580619312057}
+  - component: {fileID: 3725604666459082569}
   m_Layer: 0
   m_Name: Kart 4 (Pink)
   m_TagString: AI
@@ -1045,12 +1046,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da7bd42f68a3cf241aab33bb3c22e86b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  waypointContainer: {fileID: 0}
-  waypoints: []
-  currentWaypoint: 0
-  waypointRange: 10
+  trackSpline: {fileID: 0}
+  lookAheadDistance: 15
+  speedLookAheadScale: 0.5
   acceleration: 25
   maxSpeed: 20
+  curvatureBrakeStrength: 5
+  minCurveSpeed: 6
   slopeFactor: 1
   groundForce: 50
   AIWeight: 0
@@ -1085,6 +1087,24 @@ MonoBehaviour:
   wasInstantiatedForce: 0
   myRigidBody: {fileID: 0}
   myRigidBody2D: {fileID: 0}
+--- !u!114 &3725604666459082569
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5017399005647341468}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fea29bb7c508c244a1f805a5fd3fc4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  outlineMode: 0
+  outlineColor: {r: 1, g: 1, b: 1, a: 1}
+  outlineWidth: 5
+  precomputeOutline: 0
+  bakeKeys: []
+  bakeValues: []
 --- !u!1 &5212408183360569366
 GameObject:
   m_ObjectHideFlags: 0

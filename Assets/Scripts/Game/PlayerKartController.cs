@@ -119,14 +119,18 @@ public class PlayerKartController : MonoBehaviour
 
     void Update()
     {
-        if (!IsLocallyControlled) return;
+        if (!IsLocallyControlled) 
+            return;
+
         ApplyInput();
         UpdateEngineSound();
     }
 
     void FixedUpdate()
     {
-        if (!IsLocallyControlled) return;
+        if (!IsLocallyControlled) 
+            return;
+
         UpdatePosition();
         HandleCamera();
         StabilizeKart();

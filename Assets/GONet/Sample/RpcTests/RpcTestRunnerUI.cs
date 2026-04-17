@@ -145,7 +145,7 @@ namespace GONet.Sample.RpcTests
             panelImage.color = new Color(0.05f, 0.1f, 0.15f, 0.98f);
 
             // Add subtle border
-            Outline outline = panel.AddComponent<Outline>();
+            UnityEngine.UI.Outline outline = panel.AddComponent<UnityEngine.UI.Outline>();
             outline.effectColor = new Color(0.2f, 0.5f, 0.7f, 1f);
             outline.effectDistance = new Vector2(3, -3);
 

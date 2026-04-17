@@ -10,6 +10,8 @@ using UnityEngine.SceneManagement;
 /// </summary>
 public class NetworkManager : MonoBehaviour, IOrderedScript
 {
+    public const int MaxPlayerCount = 10;
+
     public static NetworkManager Instance { get; private set; }
     public static bool IsConnectedGONet => (GONetMain.GONetClient != null && GONetMain.GONetClient.IsConnectedToServer) 
         || (GONetMain.gonetServer != null && GONetMain.gonetServer.IsRunning);
@@ -24,6 +26,7 @@ public class NetworkManager : MonoBehaviour, IOrderedScript
         Instance = this;
 
         SteamManager.OnLobbyDataUpdate += OnLobbyDataUpdate;
+
         GONetConnectionManager.OnConnectionSuccess += OnGONetConnected;
     }
 
@@ -32,6 +35,7 @@ public class NetworkManager : MonoBehaviour, IOrderedScript
     void OnDestroy()
     {
         SteamManager.OnLobbyDataUpdate -= OnLobbyDataUpdate;
+
         if (GONetConnectionManager != null)
             GONetConnectionManager.OnConnectionSuccess -= OnGONetConnected;
     }
@@ -88,7 +92,7 @@ public class NetworkManager : MonoBehaviour, IOrderedScript
         if (useSteamTransport)
             preset.transportType = GONetTransportType.Steamworks;
         
-        preset.maxConnections = RaceManager.MaxPlayers;
+        preset.maxConnections = MaxPlayerCount;
 
         GONetConnectionManager.CurrentPreset = preset;
         GONetConnectionManager.Connect();
@@ -104,7 +108,20 @@ public class NetworkManager : MonoBehaviour, IOrderedScript
                 SceneType.Racetrack.ToString(),
                 LoadSceneMode.Single
             );
+
+            //Server subscribes to client connections.
+            GONetMain.gonetServer.ClientConnected += GonetServer_ClientConnected;
+            GONetMain.gonetServer.ClientDisconnected += GonetServer_ClientDisconnected;
         }
+    }
+
+    void GonetServer_ClientConnected(GONetConnection_ServerToClient connection)
+    {
+        Debug.Log($"GONet Client connected with authority ID {connection.OwnerAuthorityId}");
+    }
+    void GonetServer_ClientDisconnected(GONetConnection_ServerToClient connection)
+    {
+        Debug.Log($"GONet Client disconnected with authority ID {connection.OwnerAuthorityId}");
     }
 
     /// <summary>

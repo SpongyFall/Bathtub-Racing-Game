@@ -15,39 +15,49 @@ using UnityEngine;
 public class KartSpawnManager : MonoBehaviour
 {
     [Tooltip("PlayerKart prefab (must live in a Resources folder with GONetParticipant).")]
-    [SerializeField] GONetParticipant playerKartPrefab;
+    public GONetParticipant PlayerKartPrefab;
+    public GONetParticipant AIKartPrefab;
+    public Transform SpawnPointParent;
 
-    [Tooltip("Ordered spawn point transforms, matching the AI kart list below.")]
-    [SerializeField] List<Transform> spawnPoints;
+    //[Tooltip("Pre-placed AI kart GameObjects in the scene, one per spawn slot in the same order as spawnPoints.")]
+    //[SerializeField] List<OpponentKartAI> aiKarts;
 
-    [Tooltip("Pre-placed AI kart GameObjects in the scene, one per spawn slot in the same order as spawnPoints.")]
-    [SerializeField] List<OpponentKartAI> aiKarts;
+    List<Transform> spawnPoints = new();
 
-    void Start()
+    void Awake()
     {
+        FindSpawnPoints();
+    }
+    void FindSpawnPoints()
+    {
+        spawnPoints.Clear();
+        for (int i = 0; i < SpawnPointParent.childCount; i++)
+        {
+            var child = SpawnPointParent.GetChild(i);
+            spawnPoints.Add(child);
+        }
     }
 
     public void SpawnKart()
     {
-        if (NetworkManager.IsConnectedGONet && !SteamManager.InSteamLobby)
+        if (spawnPoints.Count == 0)
         {
-            RaceManager.Instance.LeaveGame();
-            return;
+            Debug.LogError($"Trying to {nameof(SpawnKart)} before spawn points are set!");
+            FindSpawnPoints();
         }
 
         List<CSteamID> lobbyPlayers = SteamManager.GetLobbyPlayerIds();
-
         int playerCount = lobbyPlayers.Count > 0 ? lobbyPlayers.Count : 1;
 
         // Disable AI karts that will be replaced by human players.
-        for (int i = 0; i < playerCount && i < aiKarts.Count; i++)
-            aiKarts[i].gameObject.SetActive(false);
+        //for (int i = 0; i < playerCount && i < aiKarts.Count; i++)
+        //    aiKarts[i].gameObject.SetActive(false);
             //Destroy(aiKarts[i].gameObject);
 
         if (!SteamManager.InSteamLobby)
         {
             // Solo / offline: spawn the local player kart at slot 0.
-            SpawnServerKart(0);
+            SpawnPlayerKart(0);
             return;
         }
 
@@ -59,7 +69,7 @@ public class KartSpawnManager : MonoBehaviour
             Debug.LogError("[KartSpawnManager] Local SteamID not found in lobby member list. Defaulting to slot 0.");
             myIndex = 0;
         }
-        SpawnServerKart(myIndex);
+        SpawnPlayerKart(myIndex);
 
         //if (GONetMain.IsServer)
         //{
@@ -79,26 +89,34 @@ public class KartSpawnManager : MonoBehaviour
         //    SpawnClientKart(myIndex);
         //}
     }
-
-    void SpawnServerKart(int slotIndex)
+    void SpawnPlayerKart(int slotIndex)
     {
-        if (slotIndex >= spawnPoints.Count)
-        {
-            Debug.LogError($"[KartSpawnManager] No spawn point at index {slotIndex}.");
-            return;
-        }
+        //if (slotIndex >= spawnPoints.Count)
+        //{
+        //    Debug.LogError($"[KartSpawnManager] No spawn point at index {slotIndex}.");
+        //    return;
+        //}
+        //Just loop slot index, should never really happen though.
+        slotIndex %= spawnPoints.Count;
+
         Transform sp = spawnPoints[slotIndex];
-        Instantiate(playerKartPrefab, sp.position, sp.rotation);
+        Instantiate(PlayerKartPrefab, sp.position, sp.rotation);
     }
 
-    void SpawnClientKart(int slotIndex)
+    public void SpawnAIKarts(int count)
     {
-        if (slotIndex >= spawnPoints.Count)
-        {
-            Debug.LogError($"[KartSpawnManager] No spawn point at index {slotIndex}.");
+        //Fills remaining slots with AI karts. Server controls the AI karts by spawning them himself.
+        if (!GONetMain.IsServer)
             return;
+
+        int spawnedPlayerCount = RaceManager.Instance.NetworkedKarts.Count;
+        for (int i = 0; i < count; i++)
+        {
+            int slotIndex = (spawnedPlayerCount + i) % spawnPoints.Count;
+            Transform sp = spawnPoints[slotIndex];
+            Instantiate(AIKartPrefab, sp.position, sp.rotation);
         }
-        Transform sp = spawnPoints[slotIndex];
-        GONetMain.Client_InstantiateToBeRemotelyControlledByMe(playerKartPrefab, sp.position, sp.rotation);
+
+        Debug.Log($"Server spawned {count} AI karts.");
     }
 }

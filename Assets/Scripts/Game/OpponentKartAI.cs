@@ -52,6 +52,32 @@ public class OpponentKartAI : MonoBehaviour
 
         AIWeight = Random.Range(0.8f, 1.3f);
         RandomizeBodyColor();
+
+        SetSplineTrack(RaceManager.Instance.TrackSpline);
+    }
+
+    void OnEnable()
+    {
+        Debug.Log($"Enabling AI Kart: {gameObject.name}");
+        RaceManager.Instance.AddKartAI(this, true);
+    }
+    void OnDisable()
+    {
+        RaceManager.Instance.AddKartAI(this, false);
+    }
+
+    void FixedUpdate()
+    {
+        if (!canDrive)
+        {
+            rb.velocity = Vector3.Lerp(rb.velocity, Vector3.zero, Time.deltaTime);
+            return;
+        }
+
+        if (trackSpline != null)
+            HandleSplineMovement();
+        else
+            HandleSlopeMovement();
     }
 
     void RandomizeBodyColor()
@@ -64,18 +90,9 @@ public class OpponentKartAI : MonoBehaviour
         }
     }
 
-    void FixedUpdate()
+    public void SetSplineTrack(SplineContainer container)
     {
-        if (!canDrive)
-        {
-            rb.velocity = Vector3.zero;
-            return;
-        }
-
-        if (trackSpline != null)
-            HandleSplineMovement();
-        else
-            HandleSlopeMovement();
+        trackSpline = container;
     }
 
     // Generic AI racer movement algorithm that follows a spline path defined in the scene using Unity's spline utility

@@ -46,8 +46,8 @@
             "codeGenerationId": 2
         },
         {
-            "location": "resources://Assets/Resources/Prefabs/Karts/CustomKartBase.prefab",
-            "unityGuid": "73ffa1b9be9991847b175b2229a0abd6",
+            "location": "resources://Assets/Resources/Prefabs/Karts/AI Kart.prefab",
+            "unityGuid": "85c72348657b1e049a6422b5dcb74a8d",
             "codeGenerationId": 1
         },
         {
@@ -76,28 +76,13 @@
             "codeGenerationId": 1
         },
         {
+            "location": "resources://Assets/Resources/Prefabs/Karts/Player Kart.prefab",
+            "unityGuid": "73ffa1b9be9991847b175b2229a0abd6",
+            "codeGenerationId": 1
+        },
+        {
             "location": "resources://Assets/Resources/Prefabs/OldPlayerKart.prefab",
             "unityGuid": "c56a5cae37c1f58478f9a87aacfe6d35",
-            "codeGenerationId": 1
-        },
-        {
-            "location": "scene://Racetrack/Kart 1",
-            "unityGuid": "",
-            "codeGenerationId": 1
-        },
-        {
-            "location": "scene://Racetrack/Kart 2",
-            "unityGuid": "",
-            "codeGenerationId": 1
-        },
-        {
-            "location": "scene://Racetrack/Kart 3",
-            "unityGuid": "",
-            "codeGenerationId": 1
-        },
-        {
-            "location": "scene://Racetrack/Kart 4",
-            "unityGuid": "",
             "codeGenerationId": 1
         },
         {

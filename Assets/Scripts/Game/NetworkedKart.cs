@@ -16,6 +16,7 @@ public class NetworkedKart : GONetParticipantCompanionBehaviour
     public Camera Camera;
     public Canvas WorldCanvas;
     public TextMeshProUGUI RacerName;
+    public QuickOutline Outline;
     [Space]
     [Header("Runtime Set Properties")]
     //Meant to be synced but GONet was getting compile errors during code generation using this property.
@@ -39,7 +40,10 @@ public class NetworkedKart : GONetParticipantCompanionBehaviour
 
     void Update()
     {
-        if (WorldCanvas.gameObject.activeSelf)
+        if (RaceManager.Instance == null)
+            return;
+
+        if (WorldCanvas.gameObject.activeSelf && RaceManager.Instance.MainCamera)
             WorldCanvas.transform.rotation = Quaternion.LookRotation(WorldCanvas.transform.position - RaceManager.Instance.MainCamera.transform.position);
     }
 
@@ -78,22 +82,15 @@ public class NetworkedKart : GONetParticipantCompanionBehaviour
 
         //Enable camera.
         Camera.gameObject.SetActiveSafe(!inMultiplayer || gonetParticipant.IsLocallyControlled);
-        RacerInfo.isClientPlayer = !inMultiplayer || IsMine;
+        RacerInfo.IsClientPlayer = !inMultiplayer || IsMine;
         Controller.rb.isKinematic = inMultiplayer && !IsMine;
         WorldCanvas.gameObject.SetActiveSafe(!IsMine);
+        Outline.enabled = !IsMine;
 
         if (!inMultiplayer || IsMine)
         {
             //Load kart skin.
             //RPCLoadCustomKart();
-        }
-
-        //Refresh racers.
-        var rpm = FindFirstObjectByType<RacePositionManager>();
-        if (rpm != null)
-        {
-            rpm.RefreshRacers();
-            Debug.Log("REFRESH after player kart spawn");
         }
 
         //RPC to all the owner's Steam ID.

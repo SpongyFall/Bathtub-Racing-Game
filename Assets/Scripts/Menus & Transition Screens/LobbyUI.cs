@@ -1,10 +1,11 @@
+using Org.BouncyCastle.Crypto.Tls;
+using Steamworks;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using Steamworks;
-using TMPro;
-using System;
 
 public class LobbyUI : MonoBehaviour, IOrderedScript
 {
@@ -81,16 +82,20 @@ public class LobbyUI : MonoBehaviour, IOrderedScript
 
     void SteamManager_OnLobbyEntered(LobbyEnter_t info)
     {
-        MainMenuManager.Instance.ShowPanel(gameObject, true);
-        UpdateUI();
-
-        StartBtn.gameObject.SetActive(SteamManager.IsLobbyOwner);
+        ShowCurrentLobby();
     }
     void SteamManager_OnLobbyPlayerJoined(LobbyChatUpdate_t info, bool joined)
     {
         //May or may not be in lobby, client player disconnect happens first.
         if (SteamManager.InSteamLobby)
+        {
             UpdateUI();
+
+            //Joined or left chat message.
+            string playerName = SteamFriends.GetFriendPersonaName(new CSteamID(info.m_ulSteamIDUserChanged));
+            string chatMsg = $"'{playerName}' {(joined ? "joined!" : "left!")}";
+            AppendChatMessage(chatMsg);
+        }
 
         StartBtn.gameObject.SetActive(SteamManager.IsLobbyOwner);
     }
@@ -116,6 +121,14 @@ public class LobbyUI : MonoBehaviour, IOrderedScript
     {
         string senderName = SteamFriends.GetFriendPersonaName(senderId);
         AppendChatMessage($"{senderName}: {message}");
+    }
+
+    public void ShowCurrentLobby()
+    {
+        MainMenuManager.Instance.ShowPanel(gameObject, true);
+        UpdateUI();
+
+        StartBtn.gameObject.SetActive(SteamManager.IsLobbyOwner);
     }
 
     public void UpdateUI()
@@ -155,14 +168,17 @@ public class LobbyUI : MonoBehaviour, IOrderedScript
     {
         //When the copy code btn is clicked, change the text of the copy code btn to the room's code until the mouse
         //moves off the btn.
-        string newCodeBtnText = $"Copied!\n Code: {SteamManager.LobbyId.Value}";
+        string newCodeBtnText = $"Copied!\n{SteamManager.LobbyId.Value}";
 
         //As long as we are hovering over the copy code btn, keep showing the code.
         var firstRaycast = MainMenuManager.Instance.FirstMouseRaycast;
         while (firstRaycast != null && firstRaycast.Value.gameObject.GetComponentInParent<Button>() == CopyCodeBtn)
         {
             CopyCodeBtnText.text = newCodeBtnText;
+
             yield return null;
+
+            firstRaycast = MainMenuManager.Instance.FirstMouseRaycast;
         }
 
         //Reset text and clear cor.
@@ -177,7 +193,8 @@ public class LobbyUI : MonoBehaviour, IOrderedScript
 
     void OnStartClick()
     {
-        NetworkManager.Instance.StartGame();
+        MainMenuManager.Instance.ShowTrackSelection(gameObject);
+        //NetworkManager.Instance.StartGame();
     }
     void OnLeaveClick()
     {
@@ -201,7 +218,10 @@ public class LobbyUI : MonoBehaviour, IOrderedScript
         spawnedMessages.Add(msg);
 
         LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)ChatContent);
-        StartCoroutine(ScrollToBottom());
+        if (gameObject.activeInHierarchy)
+            StartCoroutine(ScrollToBottom());
+        else
+            ChatScroll.verticalNormalizedPosition = 0f;
     }
     IEnumerator ScrollToBottom()
     {

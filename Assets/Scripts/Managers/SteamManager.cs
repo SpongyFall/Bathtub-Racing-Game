@@ -102,7 +102,7 @@ public class SteamManager : MonoBehaviour, IOrderedScript
 
     public static void CreateLobby()
     {
-        SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypePublic, RaceManager.MaxPlayers);
+        SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypePublic, NetworkManager.MaxPlayerCount);
     }
     static void LobbyCreated(LobbyCreated_t info)
     {
@@ -173,7 +173,6 @@ public class SteamManager : MonoBehaviour, IOrderedScript
     {
         var lobbyId = new CSteamID(info.m_ulSteamIDLobby);
         var userId = new CSteamID(info.m_ulSteamIDUserChanged);
-        //Name could be null here (I think?)
         var playerName = SteamFriends.GetFriendPersonaName(userId);
         var state = (EChatMemberStateChange)info.m_rgfChatMemberStateChange;
 
@@ -441,7 +440,7 @@ public class SteamManager : MonoBehaviour, IOrderedScript
 
     public static void RequestLobbyList()
     {
-        SteamMatchmaking.AddRequestLobbyListNumericalFilter("players", RaceManager.MaxPlayers, ELobbyComparison.k_ELobbyComparisonLessThan);
+        SteamMatchmaking.AddRequestLobbyListNumericalFilter("players", NetworkManager.MaxPlayerCount, ELobbyComparison.k_ELobbyComparisonLessThan);
         var call = SteamMatchmaking.RequestLobbyList();
         cbLobbyMatchList.Set(call);
     }

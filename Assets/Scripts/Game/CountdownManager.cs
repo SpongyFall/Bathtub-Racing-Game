@@ -27,11 +27,7 @@ public class CountdownManager : MonoBehaviour
         countdownText.text = "GO!";
         raceTimer.StartRace();
 
-        RaceManager.Instance.ClientKart.Controller.canDrive = true;
-        
-        OpponentKartAI[] ais = Object.FindObjectsOfType<OpponentKartAI>();
-        foreach (var ai in ais)
-            ai.canDrive = true;
+        RaceManager.Instance.OnCountdownFinished(this);
 
         yield return new WaitForSeconds(1f);
         countdownText.text = "";
