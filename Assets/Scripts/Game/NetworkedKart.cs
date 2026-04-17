@@ -1,5 +1,6 @@
 using GONet;
 using Steamworks;
+using System;
 using System.Linq;
 using TMPro;
 using UnityEngine;
@@ -21,6 +22,7 @@ public class NetworkedKart : GONetParticipantCompanionBehaviour
     [Header("Runtime Set Properties")]
     //Meant to be synced but GONet was getting compile errors during code generation using this property.
     public ulong OwnerSteamId;
+    public bool SetupComplete = false;
 
     public Rigidbody Rigid => Controller.rb;
 
@@ -31,8 +33,8 @@ public class NetworkedKart : GONetParticipantCompanionBehaviour
         if (RaceManager.Instance)
         {
             //Not in multiplayer, setup right away.
-            if (!NetworkManager.IsConnectedGONet)
-                Setup();
+            //if (!NetworkManager.IsConnectedGONet)
+            //    Setup();
         
             RaceManager.Instance.AddNetworkedKart(this, true);
         }
@@ -93,12 +95,18 @@ public class NetworkedKart : GONetParticipantCompanionBehaviour
             //RPCLoadCustomKart();
         }
 
+        SetupComplete = true;
         //RPC to all the owner's Steam ID.
-        if (IsMine)
-            CallRpc(nameof(RPCSetup), OwnerSteamId);
+        //if (IsMine)
+        //    CallRpc(nameof(RPCSetup), OwnerSteamId);
+    }
+
+    public void RPCReady()
+    {
+        CallRpc(nameof(Ready), OwnerSteamId);
     }
     [TargetRpc(RpcTarget.All)]
-    public void RPCSetup(ulong ownerId)
+    public void Ready(ulong ownerId)
     {
         //Called to all from owner.
         OwnerSteamId = ownerId;

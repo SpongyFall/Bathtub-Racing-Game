@@ -5,8 +5,16 @@ using System.Collections;
 
 public class CountdownManager : MonoBehaviour
 {
+    public GameObject WaitingForPlayers;
     public TMP_Text countdownText;
     public RaceTimer raceTimer;
+    public AudioSource CountdownBeepSource;
+
+    void Awake()
+    {
+        WaitingForPlayers.SetActive(true);
+        countdownText.text = "";
+    }
 
     public void StartCountdown()
     {
@@ -15,6 +23,9 @@ public class CountdownManager : MonoBehaviour
 
     IEnumerator CountdownSequence()
     {
+        WaitingForPlayers.SetActive(false);
+        CountdownBeepSource.Play();
+
         countdownText.text = "3";
         yield return new WaitForSeconds(1f);
 

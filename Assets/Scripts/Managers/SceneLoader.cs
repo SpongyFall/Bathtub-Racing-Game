@@ -7,6 +7,7 @@ using System;
 
 public class SceneLoader : MonoBehaviour, IOrderedScript
 {
+    public static SceneType CurrentSceneType = SceneType.Bootstrap;
     public static event Action<SceneType, Scene, LoadSceneMode> OnSceneLoaded;
 
     public int CallOrder => 0;
@@ -25,6 +26,7 @@ public class SceneLoader : MonoBehaviour, IOrderedScript
             if (scene.name == sceneType.ToString())
                 type = sceneType;
         }
+        CurrentSceneType = type;
 
         OnSceneLoaded.InvokeSafe(nameof(OnSceneLoaded), type, scene, mode);
         Debug.Log($"Loaded scene type: {type}");

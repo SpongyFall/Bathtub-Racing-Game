@@ -41,7 +41,7 @@ public class GameUI : MonoBehaviour
 
             int totalLaps = RaceManager.Instance.TotalLaps;
             int displayLap = Mathf.Clamp(racerInfo.CompletedLaps + 1, 0, totalLaps);
-            LapCounter.text = $"Lap: {displayLap} / {totalLaps}";
+            LapCounter.text = $"Lap: {displayLap} / {(totalLaps <= 0 ? "?" : totalLaps.ToString())}";
             PlaceCounter.text = $"Place: {racerInfo.RacerPlace} / {RaceManager.Instance.RacerInfos.Count}";
         }
         LapParent.SetActiveSafe(activeClient);

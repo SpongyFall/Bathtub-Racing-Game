@@ -1,27 +1,32 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class WaypointContainer : MonoBehaviour
 {
+    [Tooltip("How close does a Kart need to be to complete a waypoint.")]
+    public float DefaultAchieveWaypointDistance = 7f;
+    [Space]
+    [Header("Runtime Set")]
     [Tooltip("Waypoints are dependent on their child ordering, and progression must be correlated with the ordering (1 can not come after 2).")]
-    public List<Transform> waypoints;
+    public List<Waypoint> waypoints;
 
     // Start is called before the first frame update
     void Awake()
     {
-        foreach (Transform tr in gameObject.GetComponentInChildren<Transform>())
-            waypoints.Add(tr);
+        waypoints = GetComponentsInChildren<Waypoint>().ToList();
+        waypoints.ForEach(x => x.Set(this));
     }
 
-    public Transform GetStartingWaypoint()
+    public Waypoint GetStartingWaypoint()
     {
         return waypoints[0];
     }
 
-    public Transform GetClosestWaypoint(Vector3 fromPos)
+    public Waypoint GetClosestWaypoint(Vector3 fromPos)
     {
-        Transform closestPoint = null;
+        Waypoint closestPoint = null;
         float minSqrDist = float.MaxValue;
 
         foreach (var point in waypoints)
@@ -37,12 +42,12 @@ public class WaypointContainer : MonoBehaviour
         return closestPoint;
     }
 
-    public Transform GetNextWaypoint(Transform current)
+    public Waypoint GetNextWaypoint(Waypoint current)
     {
         int currentIndex = waypoints.IndexOf(current);
         return GetNextWaypoint(currentIndex);
     }
-    public Transform GetNextWaypoint(int currentIndex)
+    public Waypoint GetNextWaypoint(int currentIndex)
     {
         //Progressive, will only return the next waypoint (loop from end to start).
         //Is depedant on waypoint ordering, especially children ordering.

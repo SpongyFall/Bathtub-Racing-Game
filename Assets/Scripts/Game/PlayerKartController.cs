@@ -187,7 +187,8 @@ public class PlayerKartController : MonoBehaviour
         }
 
         float currentAcceleration = acceleration * (1f / weightFactor);
-        if (isBoosting) currentAcceleration *= boostMultiplier;
+        if (isBoosting) 
+            currentAcceleration *= boostMultiplier;
 
         float halfHeight = col != null ? col.bounds.extents.y : 1f;
         Vector3 rayStart = col != null ? col.bounds.center + Vector3.up * 0.1f : transform.position + Vector3.up * 0.1f;

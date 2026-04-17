@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.Splines;
 using Unity.Mathematics;
 using Random = UnityEngine.Random;
+using System.Collections;
+using GONet;
 
 [RequireComponent(typeof(Rigidbody))]
 public class OpponentKartAI : MonoBehaviour
@@ -19,6 +21,11 @@ public class OpponentKartAI : MonoBehaviour
     [Header("AI Movement Settings")]
     public float acceleration = 20f;
     public float maxSpeed = 15f;
+    
+    [Header("Boost")]
+    public float boostMultiplier = 1.5f;
+    public float boostDuration = 3f;
+    public float boostRandomCooldown = 9f;
 
     [Header("Curvature Braking")]
     [Tooltip("How aggressively the AI brakes for curves. Higher = more braking.")]
@@ -39,9 +46,16 @@ public class OpponentKartAI : MonoBehaviour
 
     [Header("Race Control")]
     public bool canDrive = false;
+    [Space]
+    [Header("Runtime Set Props")]
+    public bool IsBoosting = false;
+    public float RemainingBoostCooldown = 0f;
 
-    private Rigidbody rb;
-    private float currentT;
+    public float ScaledMaxSpeed => maxSpeed * (IsBoosting ? boostMultiplier : 1f);
+
+    GONetParticipant participant;
+    Rigidbody rb;
+    float currentT;
 
     void Start()
     {
@@ -50,10 +64,15 @@ public class OpponentKartAI : MonoBehaviour
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
 
+        participant = GetComponent<GONetParticipant>();
+
         AIWeight = Random.Range(0.8f, 1.3f);
         RandomizeBodyColor();
 
         SetSplineTrack(RaceManager.Instance.TrackSpline);
+
+        //Start with an initial random cooldown.
+        RemainingBoostCooldown = Random.Range(0, boostRandomCooldown);
     }
 
     void OnEnable()
@@ -64,6 +83,17 @@ public class OpponentKartAI : MonoBehaviour
     void OnDisable()
     {
         RaceManager.Instance.AddKartAI(this, false);
+    }
+
+    void Update()
+    {
+        if (!canDrive || !participant.IsMine)
+            return;
+
+        RemainingBoostCooldown = Mathf.Max(0f, RemainingBoostCooldown - Time.deltaTime);
+
+        if (!IsBoosting && RemainingBoostCooldown == 0)
+            Boost();
     }
 
     void FixedUpdate()
@@ -109,7 +139,7 @@ public class OpponentKartAI : MonoBehaviour
         float splineLength = spline.GetLength();
         if (splineLength < 0.01f) return;
 
-        float speedFraction = rb.velocity.magnitude / Mathf.Max(maxSpeed, 0.01f);
+        float speedFraction = rb.velocity.magnitude / Mathf.Max(ScaledMaxSpeed, 0.01f);
         float totalLookAhead = lookAheadDistance + speedFraction * speedLookAheadScale * lookAheadDistance;
         float tOffset = totalLookAhead / splineLength;
         float lookAheadT = (currentT + tOffset) % 1f;
@@ -120,7 +150,7 @@ public class OpponentKartAI : MonoBehaviour
         // Curvature-based speed control; sample at look-ahead point to anticipate turns
         float curvature = spline.EvaluateCurvature(lookAheadT);
         float curveSpeedFactor = 1f / (1f + curvature * curvatureBrakeStrength);
-        float targetSpeed = Mathf.Lerp(minCurveSpeed, maxSpeed, curveSpeedFactor);
+        float targetSpeed = Mathf.Lerp(minCurveSpeed, ScaledMaxSpeed, curveSpeedFactor);
 
         // Account for vertical slopes
         RaycastHit hit;
@@ -157,6 +187,21 @@ public class OpponentKartAI : MonoBehaviour
             rb.velocity = rb.velocity.normalized * targetSpeed;
     }
 
+    public void Boost()
+    {
+        if (IsBoosting || RemainingBoostCooldown > 0)
+            return;
+
+        RemainingBoostCooldown = Random.Range(boostRandomCooldown * 0.5f, boostRandomCooldown);
+        StartCoroutine(BoostCoroutine());
+    }
+    IEnumerator BoostCoroutine()
+    {
+        IsBoosting = true;
+        yield return new WaitForSeconds(boostDuration);
+        IsBoosting = false;
+    }
+
     void HandleSlopeMovement()
     {
         RaycastHit hit;
@@ -185,8 +230,8 @@ public class OpponentKartAI : MonoBehaviour
             Vector3 force = slopeForward * currentAcceleration * adjustment;
             rb.AddForce(force, ForceMode.Acceleration);
 
-            if (rb.velocity.magnitude > maxSpeed)
-                rb.velocity = rb.velocity.normalized * maxSpeed;
+            if (rb.velocity.magnitude > ScaledMaxSpeed)
+                rb.velocity = rb.velocity.normalized * ScaledMaxSpeed;
         }
         else
         {

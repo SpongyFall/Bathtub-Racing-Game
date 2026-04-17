@@ -22,6 +22,8 @@ public class TrackSelectionManager : MonoBehaviour
         //If we're in a lobby, max AI count is max players - current players (including host).
         ? NetworkManager.MaxPlayerCount - SteamManager.GetLobbyPlayerCount() 
         : NetworkManager.MaxPlayerCount - 1;
+    //If we're in a lobby and there's at least another player, allow 0 AI opponents.
+    public int MinAICount => SteamManager.InSteamLobby && SteamManager.GetLobbyPlayerCount() > 1 ? 0 : 1;
 
     void Awake()
     {
@@ -53,7 +55,7 @@ public class TrackSelectionManager : MonoBehaviour
     {
         if (int.TryParse(input, out int parsedAICount))
         {
-            parsedAICount = Mathf.Clamp(parsedAICount, 1, MaxAICount);
+            parsedAICount = Mathf.Clamp(parsedAICount, MinAICount, MaxAICount);
             opponentsInput.SetTextWithoutNotify(parsedAICount.ToString());
         }
         else

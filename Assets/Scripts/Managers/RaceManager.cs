@@ -75,8 +75,7 @@ public class RaceManager : GONetParticipantCompanionBehaviour
         yield return null;
 
         KartSpawnManager.SpawnKart();
-        if (GONetMain.IsHost)
-            StartCoroutine(WaitForReadyKarts());
+        StartCoroutine(WaitForKartSpawns());
     }
 
     public void AddNetworkedKart(NetworkedKart kart, bool add)
@@ -106,63 +105,103 @@ public class RaceManager : GONetParticipantCompanionBehaviour
             KartAIs.Remove(kart);
     }
 
+    IEnumerator WaitForKartSpawns()
+    {
+        //Called to all.
+        Debug.Log($"Waiting for all karts to spawn, player count: {SteamManager.GetLobbyPlayerCount()}");
+        //Wait till all players have setup their karts.
+        //Required because if a Kart RPCs before other players spawn it, the RPC is dropped.
+        yield return new WaitUntil(() => NetworkedKarts.Count(x => x.SetupComplete) >= SteamManager.GetLobbyPlayerCount());
+
+        //Ready client kart.
+        ClientKart.RPCReady();
+        //Wait for all karts to be ready.
+        StartCoroutine(WaitForReadyKarts());
+    }
     IEnumerator WaitForReadyKarts()
     {
-        //Called by host.
-        readyKarts.Clear();
-
-        //Wait a max time cumulitive for all players to ready their karts.
+        //Called to all, but host ultimately decides at the end.
+        //Wait a max time cumulative for all players to ready their karts.
         float maxWaitTime = 10f;
         float currentWait = 0f;
 
         var playerIds = SteamManager.GetLobbyPlayerIds();
         List<CSteamID> readyPlayers = new();
-        foreach (var steamId in playerIds)
+        while (currentWait < maxWaitTime)
         {
-            string playerName = SteamFriends.GetFriendPersonaName(steamId);
-            Debug.Log($"Waiting for player {playerName} to ready their kart...");
-
-            while (true)
+            foreach (var steamId in playerIds)
             {
-                //Once we find their kart as ready, break and move on to the next player.
-                if (readyKarts.Exists(x => x.OwnerSteamId == steamId.m_SteamID))
+                //Check to see if they're ready.
+                if (!readyPlayers.Contains(steamId) && readyKarts.Exists(x => x.OwnerSteamId == steamId.m_SteamID))
                 {
                     //Debug.Log($"Player {playerName}'s kart is ready!");
                     readyPlayers.Add(steamId);
-                    break;
                 }
-                else if (currentWait >= maxWaitTime)
-                {
-                    //Waited too long.
-                    break;
-                }
-
-                currentWait += Time.deltaTime;
-                yield return null;
             }
-
-            if (currentWait >= maxWaitTime)
+            //All players ready, break.
+            if (readyPlayers.Count == playerIds.Count)
                 break;
+
+            currentWait += Time.deltaTime;
+            yield return null;
         }
 
+        //foreach (var steamId in playerIds)
+        //{
+        //    string playerName = SteamFriends.GetFriendPersonaName(steamId);
+        //    Debug.Log($"Waiting for player {playerName} to ready their kart...");
+
+        //    while (true)
+        //    {
+        //        //Once we find their kart as ready, break and move on to the next player.
+        //        if (readyKarts.Exists(x => x.OwnerSteamId == steamId.m_SteamID))
+        //        {
+        //            //Debug.Log($"Player {playerName}'s kart is ready!");
+        //            readyPlayers.Add(steamId);
+        //            break;
+        //        }
+        //        else if (currentWait >= maxWaitTime)
+        //        {
+        //            //Waited too long.
+        //            break;
+        //        }
+
+        //        currentWait += Time.deltaTime;
+        //        yield return null;
+        //    }
+
+        //    if (currentWait >= maxWaitTime)
+        //        break;
+        //}
+
+        //Kick non ready players.
         foreach (var steamId in playerIds)
         {
+            string playerName = SteamFriends.GetFriendPersonaName(steamId);
+
             if (!readyPlayers.Contains(steamId))
             {
-                string playerName = SteamFriends.GetFriendPersonaName(steamId);
-                Debug.Log($"Player {playerName} did not ready their kart in time!");
-                if (SteamIdToAuthority.TryGetValue(steamId, out ushort authorityId))
-                    NetworkManager.KickGONetPlayer(authorityId, steamId);
-                else
-                    SteamManager.KickPlayer(steamId);
+                if (GONetMain.IsHost)
+                {
+                    Debug.Log($"Player {playerName} did not ready their kart in time!");
+                    if (SteamIdToAuthority.TryGetValue(steamId, out ushort authorityId))
+                        NetworkManager.KickGONetPlayer(authorityId, steamId);
+                    else
+                        SteamManager.KickPlayer(steamId);
+                }
             }
+            else
+                Debug.Log($"Player {playerName} is ready!");
         }
 
         //Host RPC to all.
-        //Load laps and opponent count from player prefs.
-        int laps = TrackSelectionManager.GetSavedLapCount();
-        int aiCount = TrackSelectionManager.GetSavedAICount();
-        CallRpc(nameof(StartRace), laps, aiCount);
+        if (GONetMain.IsHost)
+        {
+            //Load laps and opponent count from player prefs.
+            int laps = TrackSelectionManager.GetSavedLapCount();
+            int aiCount = TrackSelectionManager.GetSavedAICount();
+            CallRpc(nameof(StartRace), laps, aiCount);
+        }
     }
     public void KartReady(NetworkedKart kart)
     {
@@ -330,7 +369,8 @@ public class RaceManager : GONetParticipantCompanionBehaviour
         if (!stayInSteamLobby)
             SteamManager.LeaveLobby();
 
-        SceneLoader.LoadScene(SceneType.MainMenu);
+        //On client disconnect will send you to the main menu.
+        //SceneLoader.LoadScene(SceneType.MainMenu);
     }
 }
 
