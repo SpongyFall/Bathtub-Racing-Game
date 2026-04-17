@@ -326,6 +326,7 @@ public class RaceManager : GONetParticipantCompanionBehaviour
 
     public void LeaveGame(bool stayInSteamLobby)
     {
+        NetworkManager.pendingSessionReset = true;
         NetworkManager.DisconnectGONet();
         if (!stayInSteamLobby)
             SteamManager.LeaveLobby();

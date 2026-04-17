@@ -13,8 +13,10 @@ public class NetworkManager : MonoBehaviour, IOrderedScript
     public const int MaxPlayerCount = 10;
 
     public static NetworkManager Instance { get; private set; }
-    public static bool IsConnectedGONet => (GONetMain.GONetClient != null && GONetMain.GONetClient.IsConnectedToServer) 
+    public static bool IsConnectedGONet => (GONetMain.GONetClient != null && GONetMain.GONetClient.IsConnectedToServer)
         || (GONetMain.gonetServer != null && GONetMain.gonetServer.IsRunning);
+
+    public static bool pendingSessionReset = false;
 
     public GONetConnectionManager GONetConnectionManager;
 
@@ -26,8 +28,8 @@ public class NetworkManager : MonoBehaviour, IOrderedScript
         Instance = this;
 
         SteamManager.OnLobbyDataUpdate += OnLobbyDataUpdate;
-
         GONetConnectionManager.OnConnectionSuccess += OnGONetConnected;
+        SceneLoader.OnSceneLoaded += OnSceneLoaded;
     }
 
     public void OrderedStart() { }
@@ -35,9 +37,19 @@ public class NetworkManager : MonoBehaviour, IOrderedScript
     void OnDestroy()
     {
         SteamManager.OnLobbyDataUpdate -= OnLobbyDataUpdate;
+        SceneLoader.OnSceneLoaded -= OnSceneLoaded;
 
         if (GONetConnectionManager != null)
             GONetConnectionManager.OnConnectionSuccess -= OnGONetConnected;
+    }
+
+    void OnSceneLoaded(SceneType type, Scene scene, LoadSceneMode mode)
+    {
+        if (type == SceneType.MainMenu && pendingSessionReset)
+        {
+            pendingSessionReset = false;
+            GONetMain.ResetForNewSession();
+        }
     }
 
     /// <summary>
@@ -75,8 +87,6 @@ public class NetworkManager : MonoBehaviour, IOrderedScript
 
     void ConnectGONet(bool offline, bool isHost, string hostSteamId)
     {
-        GONetMain.ResetForNewSession();
-
         var preset = ScriptableObject.CreateInstance<GONetConnectionPreset>();
 
         //If offline, we host.
