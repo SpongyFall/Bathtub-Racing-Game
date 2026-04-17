@@ -29,6 +29,12 @@ public class KartSpawnManager : MonoBehaviour
 
     public void SpawnKart()
     {
+        if (NetworkManager.IsConnectedGONet && !SteamManager.InSteamLobby)
+        {
+            RaceManager.Instance.LeaveGame();
+            return;
+        }
+
         List<CSteamID> lobbyPlayers = SteamManager.GetLobbyPlayerIds();
 
         int playerCount = lobbyPlayers.Count > 0 ? lobbyPlayers.Count : 1;

@@ -293,6 +293,9 @@ public class SteamManager : MonoBehaviour, IOrderedScript
         OnLobbyDataUpdate.InvokeSafe(nameof(OnLobbyDataUpdate), info);
 
         //If we were kicked, leave lobby.
+        if (!InSteamLobby)
+            return;
+
         string kickedPlayerId = SteamMatchmaking.GetLobbyData(LobbyId.Value, "kickedPlayerId");
         if (kickedPlayerId == LocalSteamId.ToString())
         {

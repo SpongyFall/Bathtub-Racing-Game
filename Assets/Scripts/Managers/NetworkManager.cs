@@ -58,8 +58,7 @@ public class NetworkManager : MonoBehaviour, IOrderedScript
     // Clients receive this when lobby metadata changes.
     void OnLobbyDataUpdate(LobbyDataUpdate_t info)
     {
-        // Only clients react — host triggers this themselves.
-        if (SteamManager.IsLobbyOwner)
+        if (!SteamManager.InSteamLobby || SteamManager.IsLobbyOwner)
             return;
 
         string state = SteamMatchmaking.GetLobbyData(SteamManager.LobbyId.Value, "state");
@@ -72,7 +71,8 @@ public class NetworkManager : MonoBehaviour, IOrderedScript
 
     void ConnectGONet(bool offline, bool isHost, string hostSteamId)
     {
-        // GONetConnectionPreset is a ScriptableObject — use CreateInstance at runtime.
+        GONetMain.ResetForNewSession();
+
         var preset = ScriptableObject.CreateInstance<GONetConnectionPreset>();
 
         //If offline, we host.
@@ -151,6 +151,8 @@ public class NetworkManager : MonoBehaviour, IOrderedScript
             Destroy(go);
         }
 
-        GONetMain.ResetForNewSession();
+        var statusUI = FindObjectOfType<GONet.Sample.GONetStatusUI>();
+        if (statusUI != null)
+            Destroy(statusUI.gameObject);
     }
 }

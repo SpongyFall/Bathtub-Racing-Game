@@ -102,15 +102,16 @@ public class RaceManager : GONetParticipantCompanionBehaviour
                 break;
         }
 
-        //Kick non-ready.
         foreach (var steamId in playerIds)
         {
             if (!readyPlayers.Contains(steamId))
             {
                 string playerName = SteamFriends.GetFriendPersonaName(steamId);
                 Debug.Log($"Player {playerName} did not ready their kart in time!");
-                //Doesn't actually kick from GONet, not sure how to get their authority ID from here.
-                SteamManager.KickPlayer(steamId);
+                if (SteamIdToAuthority.TryGetValue(steamId, out ushort authorityId))
+                    NetworkManager.KickGONetPlayer(authorityId, steamId);
+                else
+                    SteamManager.KickPlayer(steamId);
             }
         }
 
