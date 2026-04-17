@@ -102,7 +102,7 @@ public class InputManager : MonoBehaviour, IOrderedScript
         if (eventSystem)
             eventSystem.firstSelectedGameObject = null;
 
-        Debug.Log($"We are using a controller on scene load: {IsUsingController}");
+        Debug.Log($"Using a controller on scene load: {IsUsingController}");
         //We only select that first selected object of the scene if we are using a controller.
         //Otherwise, we don't want to force select and have a goofy highlight until we click.
         eventSystem.SetSelectedGameObject(IsUsingController ? FirstSelectedObjThisScene : null);

@@ -47,7 +47,6 @@ public class KartSpawnManager : MonoBehaviour
         }
 
         List<CSteamID> lobbyPlayers = SteamManager.GetLobbyPlayerIds();
-        int playerCount = lobbyPlayers.Count > 0 ? lobbyPlayers.Count : 1;
 
         // Disable AI karts that will be replaced by human players.
         //for (int i = 0; i < playerCount && i < aiKarts.Count; i++)

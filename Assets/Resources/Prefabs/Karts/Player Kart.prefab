@@ -330,8 +330,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1825585870739441330}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.047880106, y: 0.0596603, z: 0.010672691, w: -0.9970127}
-  m_LocalPosition: {x: 382.88, y: 25.46, z: 413.09}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -352,7 +352,7 @@ Transform:
   - {fileID: 7439043501238481846}
   - {fileID: 5552905508868774517}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 5.405, y: 353.078, z: -1.554}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!54 &9286265359415277
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -505,6 +505,7 @@ MonoBehaviour:
   RacerName: {fileID: 4801221654242241039}
   Outline: {fileID: 9168799017207101841}
   OwnerSteamId: 0
+  SetupComplete: 0
 --- !u!114 &9168799017207101841
 MonoBehaviour:
   m_ObjectHideFlags: 0

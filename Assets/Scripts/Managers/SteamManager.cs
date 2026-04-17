@@ -300,6 +300,10 @@ public class SteamManager : MonoBehaviour, IOrderedScript
         {
             Debug.Log("We were kicked from the Steam Lobby!");
             LeaveLobby();
+
+            //If we are in a GONet session, disconnect from it.
+            if (NetworkManager.IsConnectedGONet)
+                NetworkManager.DisconnectGONet();
         }
     }
 
@@ -487,13 +491,16 @@ public class SteamManager : MonoBehaviour, IOrderedScript
         }
     }
 
-    /// <returns>Empty list if not in a lobby. Is sorted by Steam ID (meaning you can reliably use the player index as an ID, 
-    /// although each player's index may change.</returns>
+    /// <returns>Always includes your local Steam ID, even if not in a lobby. Is sorted by Steam ID (meaning you can reliably 
+    /// use the player index as an ID, although each player's index may change.</returns>
     public static List<CSteamID> GetLobbyPlayerIds()
     {
         List<CSteamID> playerIds = new();
         if (!InSteamLobby)
+        {
+            playerIds.Add(LocalSteamId);
             return playerIds;
+        }
 
         for (int i = 0; i < SteamMatchmaking.GetNumLobbyMembers(LobbyId.Value); i++)
             playerIds.Add(SteamMatchmaking.GetLobbyMemberByIndex(LobbyId.Value, i));

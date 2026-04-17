@@ -6,8 +6,6 @@ using UnityEngine;
 // Also connects to the assigned WaypointContainer for track logic.
 public class RacerInfo : MonoBehaviour
 {
-    public const float AchieveWaypointDistance = 7f;
-
     [Tooltip("Shall we log when our current waypoint progresses?")]
     public bool LogWaypointUpdates = false;
     [Space]
@@ -16,7 +14,7 @@ public class RacerInfo : MonoBehaviour
     [Tooltip("Current completed laps. Increases when the player reaches the starting lap, after coming from another one.")]
     public int CompletedLaps = 0;
     [Tooltip("The current closest waypoint. Is progressive, and will only update when the player passes the next waypoint.")]
-    public Transform CurrentWaypoint;
+    public Waypoint CurrentWaypoint;
     [Tooltip("Kart owners update their current waypoint.")]
     //[GONetAutoMagicalSync] public int SyncedWaypointIndex = 0;
     public float DistanceToNextWaypoint = 0f;
@@ -29,18 +27,19 @@ public class RacerInfo : MonoBehaviour
     public float RaceProgress => CompletedLaps * WaypointContainer.waypoints.Count + WaypointIndex + (1f - DistanceToNextWaypoint / CurrentWaypointLength);
     public int RacerPlace => RaceManager.Instance.GetRacerPlace(this);
     public int WaypointIndex => WaypointContainer != null ? WaypointContainer.waypoints.IndexOf(CurrentWaypoint) : -1;
-    public WaypointContainer WaypointContainer => RaceManager.Instance.WaypointContainer;
+    public WaypointContainer WaypointContainer => RaceManager.Instance ? RaceManager.Instance.WaypointContainer : null;
     public bool IsControlledByMe => true;// Participant.IsLocallyControlled;
 
     void OnDrawGizmosSelected()
     {
-        if (CurrentWaypoint != null)
+        if (CurrentWaypoint != null && WaypointContainer)
         {
             var nextWaypoint = WaypointContainer.GetNextWaypoint(CurrentWaypoint);
 
             Gizmos.color = Color.green;
             Gizmos.DrawLine(transform.position, CurrentWaypoint.position);
-            Gizmos.DrawWireSphere(nextWaypoint.position, AchieveWaypointDistance);
+            //Shows the next waypoint achieve radius.
+            nextWaypoint.OnDrawGizmosSelected();
         }
     }
 
@@ -99,7 +98,9 @@ public class RacerInfo : MonoBehaviour
         {
             //Just check distance to the next waypoint, if we are close enough, update to it.
             var toNext = nextWaypoint.position - racerPos;
-            if (toNext.magnitude < AchieveWaypointDistance)
+            var toCurrent = CurrentWaypoint.position - racerPos;
+            //If we are within dist and also closer to the next than the current.
+            if (toNext.magnitude < nextWaypoint.AchieveDistance && toNext.magnitude < toCurrent.magnitude)
                 newCurrent = nextWaypoint;
 
             //Was using dot product to determine if we passed next waypoint, but had some bad edge cases.
@@ -171,7 +172,7 @@ public class RacerInfo : MonoBehaviour
         //    }
         //}
     }
-    public void SetCurrentWaypoint(Transform current)
+    public void SetCurrentWaypoint(Waypoint current)
     {
         CurrentWaypoint = current;
         //If we are the owner, update the synced index so other racers can see our progress.

@@ -28,6 +28,8 @@ public class NetworkManager : MonoBehaviour, IOrderedScript
         Instance = this;
 
         SteamManager.OnLobbyDataUpdate += OnLobbyDataUpdate;
+
+        GONetLog.MinimumLogLevel = GONetLog.LogLevel.Warning;
         GONetConnectionManager.OnConnectionSuccess += OnGONetConnected;
         SceneLoader.OnSceneLoaded += OnSceneLoaded;
     }
@@ -120,18 +122,32 @@ public class NetworkManager : MonoBehaviour, IOrderedScript
             );
 
             //Server subscribes to client connections.
-            GONetMain.gonetServer.ClientConnected += GonetServer_ClientConnected;
-            GONetMain.gonetServer.ClientDisconnected += GonetServer_ClientDisconnected;
+            GONetMain.gonetServer.ClientConnected += GonetServer_PlayerConnected;
+            GONetMain.gonetServer.ClientDisconnected += GonetServer_PlayerDisconnected;
         }
+
+        //GONetMain.GONetClient.ClientConnected += GONetClient_ClientConnected;
+        //GONetMain.GONetClient.ClientDisconnected += GONetClient_ClientDisconnected;
     }
 
-    void GonetServer_ClientConnected(GONetConnection_ServerToClient connection)
+    //void GONetClient_ClientConnected(GONetClient client)
+    //{
+    //    Debug.Log($"Local client connected with authority ID: {client.connectionToServer.OwnerAuthorityId}");
+    //}
+    //void GONetClient_ClientDisconnected(GONetClient client)
+    //{
+    //    Debug.Log($"Local client disconnected with authority ID: {client.connectionToServer.OwnerAuthorityId}");
+
+    //    SceneLoader.LoadScene(SceneType.MainMenu);
+    //}
+
+    void GonetServer_PlayerConnected(GONetConnection_ServerToClient connection)
     {
-        Debug.Log($"GONet Client connected with authority ID {connection.OwnerAuthorityId}");
+        Debug.Log($"GONet Player connected with authority ID {connection.OwnerAuthorityId}");
     }
-    void GonetServer_ClientDisconnected(GONetConnection_ServerToClient connection)
+    void GonetServer_PlayerDisconnected(GONetConnection_ServerToClient connection)
     {
-        Debug.Log($"GONet Client disconnected with authority ID {connection.OwnerAuthorityId}");
+        Debug.Log($"GONet Player disconnected with authority ID {connection.OwnerAuthorityId}");
     }
 
     /// <summary>
@@ -181,5 +197,9 @@ public class NetworkManager : MonoBehaviour, IOrderedScript
         var statusUI = FindObjectOfType<GONet.Sample.GONetStatusUI>();
         if (statusUI != null)
             Destroy(statusUI.gameObject);
+
+        //Go to main menu if we in game.
+        if (SceneLoader.CurrentSceneType == SceneType.Racetrack)
+            SceneLoader.LoadScene(SceneType.MainMenu);
     }
 }
