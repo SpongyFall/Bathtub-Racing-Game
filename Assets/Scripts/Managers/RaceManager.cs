@@ -49,8 +49,14 @@ public class RaceManager : GONetParticipantCompanionBehaviour
     {
         base.OnGONetReady();
 
-        KartSpawnManager.SpawnKart();
         Debug.Log($"Is Server: {GONetMain.IsServer}, Is Host: {GONetMain.IsHost}, Is Client: {GONetMain.IsClient}");
+        StartCoroutine(SpawnKartNextFrame());
+    }
+
+    IEnumerator SpawnKartNextFrame()
+    {
+        yield return null;
+        KartSpawnManager.SpawnKart();
         if (GONetMain.IsHost)
             StartCoroutine(WaitForReadyKarts());
     }
