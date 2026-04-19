@@ -4,10 +4,13 @@ using Unity.Mathematics;
 using Random = UnityEngine.Random;
 using System.Collections;
 using GONet;
+using System;
 
 [RequireComponent(typeof(Rigidbody))]
 public class OpponentKartAI : MonoBehaviour
 {
+    public KartAgent Agent;
+
     [Header("Spline Track")]
     public SplineContainer trackSpline;
 
@@ -51,18 +54,19 @@ public class OpponentKartAI : MonoBehaviour
     public bool IsBoosting = false;
     public float RemainingBoostCooldown = 0f;
 
+    [NonSerialized] public Rigidbody Rigid;
+
     public float ScaledMaxSpeed => maxSpeed * (IsBoosting ? boostMultiplier : 1f);
 
     GONetParticipant participant;
-    Rigidbody rb;
     float currentT;
 
     void Start()
     {
-        rb = GetComponent<Rigidbody>();
-        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
-        rb.interpolation = RigidbodyInterpolation.Interpolate;
-        rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+        Rigid = GetComponent<Rigidbody>();
+        Rigid.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        Rigid.interpolation = RigidbodyInterpolation.Interpolate;
+        Rigid.collisionDetectionMode = CollisionDetectionMode.Continuous;
 
         participant = GetComponent<GONetParticipant>();
 
@@ -100,9 +104,12 @@ public class OpponentKartAI : MonoBehaviour
     {
         if (!canDrive)
         {
-            rb.velocity = Vector3.Lerp(rb.velocity, Vector3.zero, Time.deltaTime);
+            Rigid.velocity = Vector3.Lerp(Rigid.velocity, Vector3.zero, Time.deltaTime);
             return;
         }
+
+        if (Agent)
+            return;
 
         if (trackSpline != null)
             HandleSplineMovement();
@@ -139,7 +146,7 @@ public class OpponentKartAI : MonoBehaviour
         float splineLength = spline.GetLength();
         if (splineLength < 0.01f) return;
 
-        float speedFraction = rb.velocity.magnitude / Mathf.Max(ScaledMaxSpeed, 0.01f);
+        float speedFraction = Rigid.velocity.magnitude / Mathf.Max(ScaledMaxSpeed, 0.01f);
         float totalLookAhead = lookAheadDistance + speedFraction * speedLookAheadScale * lookAheadDistance;
         float tOffset = totalLookAhead / splineLength;
         float lookAheadT = (currentT + tOffset) % 1f;
@@ -161,7 +168,7 @@ public class OpponentKartAI : MonoBehaviour
         if (grounded)
         {
             Quaternion slopeRotation = Quaternion.FromToRotation(transform.up, hit.normal) * transform.rotation;
-            rb.MoveRotation(Quaternion.Slerp(rb.rotation, slopeRotation, Time.fixedDeltaTime * 8f));
+            Rigid.MoveRotation(Quaternion.Slerp(Rigid.rotation, slopeRotation, Time.fixedDeltaTime * 8f));
 
             Vector3 slopeForward = Vector3.ProjectOnPlane((targetPos - transform.position).normalized, hit.normal).normalized;
             desiredDirection = slopeForward;
@@ -174,17 +181,17 @@ public class OpponentKartAI : MonoBehaviour
         if (desiredDirection.sqrMagnitude > 0.01f && grounded)
         {
             Quaternion directionalRotation = Quaternion.LookRotation(desiredDirection, hit.normal);
-            Quaternion finalRotation = Quaternion.Slerp(rb.rotation, directionalRotation, Time.fixedDeltaTime * 4f);
-            rb.MoveRotation(finalRotation);
+            Quaternion finalRotation = Quaternion.Slerp(Rigid.rotation, directionalRotation, Time.fixedDeltaTime * 4f);
+            Rigid.MoveRotation(finalRotation);
         }
 
         // Acceleration
         float currentAcceleration = acceleration * (1f / AIWeight);
-        rb.AddForce(desiredDirection * currentAcceleration, ForceMode.Acceleration);
+        Rigid.AddForce(desiredDirection * currentAcceleration, ForceMode.Acceleration);
 
         // Speed limiting based on ai scene settings
-        if (rb.velocity.magnitude > targetSpeed)
-            rb.velocity = rb.velocity.normalized * targetSpeed;
+        if (Rigid.velocity.magnitude > targetSpeed)
+            Rigid.velocity = Rigid.velocity.normalized * targetSpeed;
     }
 
     public void Boost()
@@ -211,7 +218,7 @@ public class OpponentKartAI : MonoBehaviour
         {
             Quaternion slopeRotation =
                 Quaternion.FromToRotation(transform.up, hit.normal) * transform.rotation;
-            rb.MoveRotation(Quaternion.Slerp(rb.rotation, slopeRotation, Time.fixedDeltaTime * 8f));
+            Rigid.MoveRotation(Quaternion.Slerp(Rigid.rotation, slopeRotation, Time.fixedDeltaTime * 8f));
 
             Vector3 slopeForward = Vector3.ProjectOnPlane(transform.forward, hit.normal).normalized;
 
@@ -228,14 +235,14 @@ public class OpponentKartAI : MonoBehaviour
 
             float currentAcceleration = acceleration * (1f / AIWeight);
             Vector3 force = slopeForward * currentAcceleration * adjustment;
-            rb.AddForce(force, ForceMode.Acceleration);
+            Rigid.AddForce(force, ForceMode.Acceleration);
 
-            if (rb.velocity.magnitude > ScaledMaxSpeed)
-                rb.velocity = rb.velocity.normalized * ScaledMaxSpeed;
+            if (Rigid.velocity.magnitude > ScaledMaxSpeed)
+                Rigid.velocity = Rigid.velocity.normalized * ScaledMaxSpeed;
         }
         else
         {
-            rb.AddForce(Vector3.down * groundForce * 0.5f, ForceMode.Acceleration);
+            Rigid.AddForce(Vector3.down * groundForce * 0.5f, ForceMode.Acceleration);
         }
     }
 }

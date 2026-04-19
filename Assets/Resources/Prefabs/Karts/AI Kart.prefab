@@ -695,6 +695,9 @@ GameObject:
   - component: {fileID: 7624670310868177023}
   - component: {fileID: -5162466575737449409}
   - component: {fileID: 3963002099523307772}
+  - component: {fileID: 8255261148491531438}
+  - component: {fileID: 9099874030491328374}
+  - component: {fileID: 2892750274275495505}
   m_Layer: 0
   m_Name: AI Kart
   m_TagString: AI
@@ -791,11 +794,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da7bd42f68a3cf241aab33bb3c22e86b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Agent: {fileID: 9099874030491328374}
   trackSpline: {fileID: 0}
   lookAheadDistance: 15
   speedLookAheadScale: 0.5
   acceleration: 25
   maxSpeed: 20
+  boostMultiplier: 1.5
+  boostDuration: 3
+  boostRandomCooldown: 9
   curvatureBrakeStrength: 5
   minCurveSpeed: 6
   slopeFactor: 1
@@ -803,6 +810,8 @@ MonoBehaviour:
   AIWeight: 0
   bathtubRenderer: {fileID: 6862865401562087334}
   canDrive: 0
+  IsBoosting: 0
+  RemainingBoostCooldown: 0
 --- !u!114 &7624670310868177023
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -849,6 +858,7 @@ MonoBehaviour:
   CompletedLaps: 0
   CurrentWaypoint: {fileID: 0}
   DistanceToNextWaypoint: 0
+  CurrentWaypointLength: 0
 --- !u!114 &3963002099523307772
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -867,6 +877,69 @@ MonoBehaviour:
   precomputeOutline: 0
   bakeKeys: []
   bakeValues: []
+--- !u!114 &8255261148491531438
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4796391842379588543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d1c4e0b1822b495aa52bc52839ecb30, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_BrainParameters:
+    VectorObservationSize: 1
+    NumStackedVectorObservations: 1
+    m_ActionSpec:
+      m_NumContinuousActions: 0
+      BranchSizes: 0300000002000000
+    VectorActionSize: 0300000002000000
+    VectorActionDescriptions: []
+    VectorActionSpaceType: 0
+    hasUpgradedBrainParametersWithActionSpec: 1
+  m_Model: {fileID: 0}
+  m_InferenceDevice: 0
+  m_BehaviorType: 0
+  m_BehaviorName: KartAgent
+  TeamId: 0
+  m_UseChildSensors: 1
+  m_UseChildActuators: 1
+  m_ObservableAttributeHandling: 0
+--- !u!114 &9099874030491328374
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4796391842379588543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a56614e0bcbc9ce42936bfcfeebd828d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  agentParameters:
+    maxStep: 0
+  hasUpgradedFromAgentParameters: 1
+  MaxStep: 0
+  TurnSpeed: 5
+  KartAI: {fileID: -9015611674370377113}
+  RacerInfo: {fileID: -5162466575737449409}
+--- !u!114 &2892750274275495505
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4796391842379588543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a5c9d521e5ef4759a8246a07d52221e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  DecisionPeriod: 5
+  TakeActionsBetweenDecisions: 1
 --- !u!1 &5307640510295077584
 GameObject:
   m_ObjectHideFlags: 0

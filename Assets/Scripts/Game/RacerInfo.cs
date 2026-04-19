@@ -28,7 +28,10 @@ public class RacerInfo : MonoBehaviour
     public int RacerPlace => RaceManager.Instance.GetRacerPlace(this);
     public int WaypointIndex => WaypointContainer != null ? WaypointContainer.waypoints.IndexOf(CurrentWaypoint) : -1;
     public WaypointContainer WaypointContainer => RaceManager.Instance ? RaceManager.Instance.WaypointContainer : null;
+    //Set to true currently to allow all players to calcuate Waypoint updates, until kart owners are made to sync them.
     public bool IsControlledByMe => true;// Participant.IsLocallyControlled;
+
+    public event Action<Waypoint, Waypoint> OnWaypointReached;
 
     void OnDrawGizmosSelected()
     {
@@ -134,6 +137,7 @@ public class RacerInfo : MonoBehaviour
         //Update current if changed.
         if (newCurrent != CurrentWaypoint)
         {
+            var prev = CurrentWaypoint;
             SetCurrentWaypoint(newCurrent);
             if (LogWaypointUpdates)
                 Debug.Log($"Racer: '{name}' reached next waypoint: {newCurrent}!");
@@ -148,6 +152,8 @@ public class RacerInfo : MonoBehaviour
 
                 RaceManager.Instance.CheckEndConditions();
             }
+
+            OnWaypointReached?.InvokeSafe(nameof(OnWaypointReached), prev, newCurrent);
         }
 
         nextWaypoint = WaypointContainer.GetNextWaypoint(CurrentWaypoint);
