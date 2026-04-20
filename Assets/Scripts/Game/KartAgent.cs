@@ -31,15 +31,6 @@ public class KartAgent : Agent
 
     void Update()
     {
-        //RequestDecision();
-
-        float currentProgress = RacerInfo.RaceProgress;
-        float progressChange = currentProgress - prevFrameProgress;
-        float reward = progressChange + (-0.001f * Time.deltaTime);
-        prevFrameProgress = currentProgress;
-
-        Debug.Log(reward);
-        AddReward(reward);
     }
 
     public override void OnEpisodeBegin()
@@ -92,9 +83,35 @@ public class KartAgent : Agent
         float accelAmount = accel == 1 ? 1f : 0f;
 
         transform.Rotate(steerAmount * TurnSpeed * Vector3.up);
-        rigid.AddForce(accelAmount * KartAI.ScaledMaxSpeed * transform.forward);
+        //rigid.velocity += accelAmount * KartAI.ScaledMaxSpeed * Time.deltaTime * transform.forward;
+        rigid.AddForce(accelAmount * KartAI.ScaledMaxSpeed * transform.forward, ForceMode.Acceleration);
 
-        Debug.Log($"Action received: {steer}, {accel}");
+        //Add reward for action results.
+        //Progress reward.
+        float currentProgress = RacerInfo.RaceProgress;
+        float progressChange = currentProgress - prevFrameProgress;
+        float progressReward = progressChange * 20f;
+        prevFrameProgress = currentProgress;
+
+        //Waypoint direction reward.
+        float waypointDirReward = 0;
+        var nextWaypoint = RacerInfo.WaypointContainer.GetNextWaypoint(RacerInfo.CurrentWaypoint);
+        if (nextWaypoint != null)
+        {
+            var toNextWaypoint = (nextWaypoint.position - transform.position).normalized;
+            waypointDirReward = Vector3.Dot(transform.forward, toNextWaypoint) * 0.1f;
+        }
+
+        //Need to penalize for sitting in same area going back and forth.
+        float nearCurrentReward = 0;
+        if (RacerInfo.CurrentWaypoint)
+            nearCurrentReward += Vector3.Distance(transform.position, RacerInfo.CurrentWaypoint.position) * -0.05f;
+
+        float reward = progressReward + waypointDirReward; //+ (-0.001f * Time.deltaTime);
+        AddReward(reward);
+
+        if (name.Contains("5"))
+            Debug.Log($"Action received: {steer}, {accel}, reward: {reward}");
     }
 
     void RacerInfo_OnWaypointReached(Waypoint prev, Waypoint current)
