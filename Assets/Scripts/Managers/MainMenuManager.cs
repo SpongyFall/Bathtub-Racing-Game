@@ -48,7 +48,7 @@ public class MainMenuManager : MonoBehaviour, IOrderedScript, ICancelHandler
     string originJoinBtnText;
     Coroutine changeJoinBtnCor = null;
 
-    const string websiteUrl = "https://team-22-bathtub-racing-game.github.io/Website/";
+    const string websiteUrl = "https://multiplayertubracinggame.com/";
 
     void Awake()
     {
